@@ -18,29 +18,76 @@ This project processes UK Census Small Area Statistics (SAS) microdata from the 
 
 ```
 FYP_Data_Pipeline/
-├── 81sas04/                              # 1981 Census SAS04 (Country of Birth)
-│   ├── 81sas04.ipynb                     # Jupyter notebook for data exploration
-│   ├── 81sas04ews_0.csv                  # SAS04 data split (part 1)
-│   ├── 81sas04ews_1.csv                  # SAS04 data split (part 2)
-│   ├── 81sas04ews_2.csv                  # SAS04 data split (part 3)
-│   ├── 81sas04ews_3.csv                  # SAS04 data split (part 4)
-│   ├── 81sas04ews_4.csv                  # SAS04 data split (part 5)
-│   ├── 1981_geography_lookup.csv          # Zone code → area name/type mapping
-│   ├── 1981_table_code_name_lookup.csv    # SAS table metadata
-│   ├── manchester_sas04_1981.csv          # Manchester (03BN) aggregate output
-│   ├── README.md
-│   └── README.md                          # (root-level documentation)
-```
+├── README.md                             # Project overview (this file)
+├── pyproject.toml                        # Python project config + dependencies
+├── .gitignore                            # Git exclusions (data/, *.pyc, etc.)
+├── Makefile                              # Common commands (optional)
+│
+├── configs/
+│   ├── sources.yml                       # Data source URLs, versions
+│   ├── geography.yml                     # Manchester codes, ward filters
+│   └── pipeline.yml                      # Run parameters, years, tables
+│
+├── data/
+│   ├── raw/
+│   │   └── census_1981/
+│   │       ├── sas04_1981_full.csv       # ← Combined (single file, not splits)
+│   │       ├── 1981_geography_lookup.csv # ← Zone ID ↔ name mapping
+│   │       └── 1981_table_code_name_lookup.csv
+│   ├── interim/
+│   │   └── sas04_1981_validated.parquet  # Typed, indexed version (generated)
+│   └── processed/
+│       └── sas04_manchester_1981.csv     # Final aggregated dataset
+│
+├── outputs/
+│   ├── aggregates/
+│   │   └── manchester/
+│   │       ├── 1981/
+│   │       │   └── sas04_summary.csv
+│   │       └── 1991/  # (forthcoming)
+│   ├── figures/
+│   └── logs/
+│
+├── notebooks/
+│   ├── 01_ingest_validate.ipynb         # Load & validate raw SAS04
+│   ├── 02_explore_sas04.ipynb           # EDA: distribution, patterns
+│   └── 03_manchester_checks.ipynb       # Verify Manchester aggregates
+│
+├── src/fyp_pipeline/
+│   ├── __init__.py
+│   ├── io/
+│   │   ├── read_sas.py                  # Load/concat SAS CSV → DataFrame
+│   │   └── paths.py                     # Path helpers (raw/, processed/, etc.)
+│   ├── lookups/
+│   │   ├── geography.py                 # Manchester codes, ward lists
+│   │   └── variables.py                 # Map 81sas04XXXX → labels
+│   ├── transforms/
+│   │   ├── clean.py                     # Column cleaning, type coercion
+│   │   └── validate.py                  # Schema validation, checks
+│   ├── aggregates/
+│   │   └── manchester.py                # Sum zoneids starting with 03BN
+│   └── cli.py                           # Optional CLI entrypoint
+│
+├── scripts/
+│   ├── ingest_1981_sas04.py            # Download → combine → validate
+│   ├── aggregate_manchester_1981.py    # Filter & sum → output
+│   └── build_all.py                     # Run full pipeline end-to-end
+│
+└── tests/
+    ├── test_geography_codes.py
+    ├── test_aggregate_manchester.py
+    └── conftest.py
 
-## Data Files
 
 ### Census Data (SAS04)
 
-| File | Description | Rows | Purpose |
-|------|---|---|---|
-| `81sas04ews_0–4.csv` | Country of birth by zone (split 5 ways) | ~9,000 zones × 61 variables | Raw microdata; combine for full 1981 coverage |
-| `1981_geography_lookup.csv` | Zone code ↔ area name mapping | ~7,500 zones | Link zone IDs (`03BNAA`, `03BNAB`, etc.) to ward/district names |
-| `1981_table_code_name_lookup.csv` | SAS table metadata | 50 tables | Interpret column definitions (e.g., `81sas040359` = Far East births) |
+| File | Location | Purpose |
+|------|---|---|
+| `sas04_1981_full.csv` | `data/raw/census_1981/` | **Single combined file** (not 5 splits); raw microdata |
+| `1981_geography_lookup.csv` | `data/raw/census_1981/` | Link zone IDs to area names & types |
+| `1981_table_code_name_lookup.csv` | `data/raw/census_1981/` | SAS table metadata (50 tables) |
+| `sas04_1981_validated.parquet` | `data/interim/` | Typed, indexed version (auto-generated) |
+| `sas04_manchester_1981.csv` | `data/processed/` | Manchester (03BN) aggregated final data |
 
 ### Key SAS04 Variables
 
@@ -52,50 +99,45 @@ FYP_Data_Pipeline/
 
 ## Quick Start
 
-### 1. Load and Explore SAS04
+### 1. Set up environment
+
+```bash
+cd FYP_Data_Pipeline
+
+# Install dependencies
+pip install -r requirements.txt
+# OR
+pip install -e .  # if using pyproject.toml
+
+# Verify data structure
+ls data/raw/census_1981/
+```
+
+### 2. Run full pipeline
+
+```bash
+# End-to-end build
+python scripts/build_all.py
+
+# Check outputs
+ls outputs/aggregates/manchester/1981/
+```
+
+### 3. Load Manchester aggregate in Python
 
 ```python
 import pandas as pd
 
-# Combine 5 SAS04 CSV files
-base = "https://raw.githubusercontent.com/jourdee-lab/FYP_Data_Pipeline/main/81sas04"
-files = [f"{base}/81sas04ews_{i}.csv" for i in range(5)]
-dfs = [pd.read_csv(url, dtype={"zoneid": "string"}) for url in files]
-sas04_1981 = pd.concat(dfs, ignore_index=True)
-
-print(sas04_1981.shape)  # (9000+, 61)
-print(sas04_1981.head())
+# Load final processed file
+manchester = pd.read_csv("data/processed/sas04_manchester_1981.csv")
+print(manchester[["81sas040359", "81sas040360", "81sas040361"]])
 ```
 
-### 2. Aggregate to Manchester City
+### 4. Explore in notebooks
 
-```python
-# Filter to Manchester (zone codes starting with 03BN)
-manchester_agg = sas04_1981.loc[
-    sas04_1981["zoneid"].str.startswith("03BN"),
-    :
-].sum(numeric_only=True)
-
-print(manchester_agg[["81sas040359", "81sas040360", "81sas040361"]])
+```bash
+jupyter notebook notebooks/02_explore_sas04.ipynb
 ```
-
-### 3. Extract Far East Births
-
-```python
-far_east = manchester_agg[[
-    "81sas040359",  # Total
-    "81sas040360",  # Male
-    "81sas040361"   # Female
-]].rename({
-    "81sas040359": "total",
-    "81sas040360": "male",
-    "81sas040361": "female"
-})
-
-print(far_east)
-```
-
-See `81sas04.ipynb` for a complete walkthrough.
 
 ## Geography Codes
 
@@ -108,15 +150,12 @@ See `81sas04.ipynb` for a complete walkthrough.
 | Ward | `03BNAA`–`03BNBK` | 27 wards (e.g., Alexandra, Ardwick, Didsbury) |
 | Enumeration District | `03BNAL01`–`03BNAL25` | ~200+ small enumeration districts |
 
-**To aggregate Manchester:**
+**To filter Manchester:**
 ```python
-manchester_codes = sas04_1981.loc[
-    sas04_1981["zoneid"].str.startswith("03BN"),
-    "zoneid"
-].unique()
+manchester_data = sas04.loc[sas04["zoneid"].str.startswith("03BN")]
 ```
 
-For full zone descriptions, consult `1981_geography_lookup.csv`.
+For full zone descriptions, see `data/raw/census_1981/1981_geography_lookup.csv`.
 
 ## Data Dictionary
 
@@ -124,16 +163,16 @@ For full zone descriptions, consult `1981_geography_lookup.csv`.
 
 All columns follow the pattern `81sas04XXXX`, where `XXXX` is a 4-digit variable code.
 
-- Columns 0001–0058: Standard country-of-birth categories (e.g., England, Scotland, India, China)
-- Columns 0359–0361: **Far East births** (China/Hong Kong proxy; see Variable Lookup for interpretation)
+- Columns 0001–0358: Country-of-birth categories
+- Columns 0359–0361: **Far East births** (China/Hong Kong proxy)
 
 ### Row Structure
 
-Each row represents a single zone (ward, enumeration district, or higher aggregate).
+Each row represents a single zone (ward, enumeration district, or aggregate).
 
 | Column | Type | Example | Notes |
 |---|---|---|---|
-| `zoneid` | string | `03BNAA` | Unique zone identifier; see geography lookup |
+| `zoneid` | string | `03BNAA` | Unique zone identifier |
 | `81sas040001` | int | 45771956 | Total persons born in England |
 | `81sas040359` | int | 122488 | Total persons born in Far East |
 
@@ -141,56 +180,76 @@ Each row represents a single zone (ward, enumeration district, or higher aggrega
 
 ### For Researchers
 
-1. **Reproduce 1981 Manchester aggregate**: Run `81sas04.ipynb`
-2. **Custom queries**: Filter by ward code in `1981_geography_lookup.csv`, then sum SAS04 columns
-3. **Longitudinal analysis**: Match 1981 zones to 1991 zones using geometry files (forthcoming)
+1. **Quick Manchester summary**: Load `data/processed/sas04_manchester_1981.csv`
+2. **Ward-level analysis**: Use `notebooks/02_explore_sas04.ipynb`; filter by `03BN*` codes in `1981_geography_lookup.csv`
+3. **Reproduce pipeline**: Run `python scripts/build_all.py`
 
 ### For Data Engineers
 
-- **Schema**: Denormalized zone-level counts; no relational structure
-- **Missing data**: Coded as 0 or absent; no explicit NA markers
-- **Encoding**: UTF-8; UK local authority names include special chars (e.g., "St. John's")
+- **Pipeline structure**: Modular scripts in `scripts/`; reusable functions in `src/fyp_pipeline/`
+- **Testing**: Run tests with `pytest tests/`
+- **Adding 1991 data**: Copy pipeline structure; parameterize year in `configs/pipeline.yml`
+
+**Example `.gitignore`:**
+```
+# Data
+data/raw/census_1981/sas04*.csv
+data/interim/
+data/processed/
+outputs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.egg-info/
+
+# IDE
+.vscode/
+.idea/
+```
 
 ## Limitations
 
 - **Zone boundary changes**: Ward/ED boundaries differ between 1981, 1991, 2001; spatial joins required for comparison
-- **Population small numbers**: Some EDs have <100 persons; aggregation to ward+ recommended for robust analysis
-- **Far East category**: SAS04 variables 359–361 capture "Far East" as a Census category (likely Hong Kong, China, and other East Asian countries); not identical to "Chinese ethnicity"
-- **Disclosure**: Original census records are anonymized; small-count suppression may apply in future releases
+- **Population small numbers**: Some EDs have <100 persons; aggregation to ward+ recommended
+- **Far East category**: SAS04 variables 359–361 capture Census-defined "Far East" (not identical to "Chinese ethnicity")
+- **Disclosure**: Anonymized records; small-count suppression may apply
 
 ## Next Steps
 
-- [ ] Ingest 1991 Census SAS04 data
+- [ ] Ingest 1991 Census SAS04 data (use same pipeline structure)
 - [ ] Create spatial join layer (1981 ↔ 1991 zone boundaries)
 - [ ] Add 2001 Census (if available)
 - [ ] Compute ward-level change metrics (growth, dispersion, concentration)
-- [ ] Integrate housing tenure and occupation data (SAS10, SAS07)
+- [ ] Integrate housing tenure (SAS10) and occupation data (SAS07)
 
 ## References
 
 - **UK Census 1981**: Small Area Statistics, Office of Population Censuses and Surveys (OPCS)
-- **Data Source**: [Census Microdata Lab](https://census.ac.uk) / Historical Census Data Archive
+- **Data Source**: Census Microdata Lab / Historical Census Data Archive
 - **Geography**: Manchester Local Authority, 1981 Boundary Definitions
 - **Method**: See *Final Year Project Plan Submission* for full methodology
 
 ## Contributors
 
-- **Author**: Jourdan Tan
-- **Supervisor**: Dr Shawn Day
-- **Institution**: University College Cork 
+- **Author**: Jourdan Tan   
+- **Supervisor**: Dr.Shawn Day
+- **Institution**: (NUI) University College Cork
 
 ## License
 
-This project is part of an academic final year project. Data sourced from UK Census (public domain, OPCS). Analysis code licensed under [MIT/Apache 2.0 — specify].
+This project is part of an academic final year project. Data sourced from UK Census (public domain, OPCS). Analysis code licensed under [MIT/Apache 2.0].
 
 ## Questions?
 
-For data structure questions, see `1981_variable_lookup.csv` (61 SAS04 columns explained).  
-For geographic questions, see `1981_geography_lookup.csv` (zone ID → name mapping).  
-For methodological questions, refer to the project plan PDF.
+- **Data structure**: See `data/raw/census_1981/1981_variable_lookup.csv` (61 SAS04 columns)
+- **Geography codes**: See `data/raw/census_1981/1981_geography_lookup.csv` (zone ID → name)
+- **Methodology**: See *Final Year Project Plan Submission* PDF
 
 ---
 
 **Last Updated**: January 2026  
 **Data Release**: 1981 Census (1981 geography)  
-**Status**: In Progress
+**Status**: Active Development
