@@ -1,0 +1,54 @@
+"table_code","table_label","table_title","table_universe","table_counts"
+SAS01,Small Area Statistics Table 01,Population bases,Persons present plus absent residents in private households,Persons
+SAS02,Small Area Statistics Table 02,All residents,"Residents in households, households with residents",Persons
+SAS03,Small Area Statistics Table 03,Communal establishments,Persons present,Persons
+SAS04,Small Area Statistics Table 04,Country of birth,All residents,Persons
+SAS05,Small Area Statistics Table 05,All residents aged 16 or over,"Households with residents, residents in households",Persons
+SAS06,Small Area Statistics Table 06,All persons present,Includes relatives of staff,Persons
+SAS07,Small Area Statistics Table 07,All residents aged 16 or over in employment,"Households with residents, residents in households",Persons
+SAS08,Small Area Statistics Table 08,Migrants,Residents with different address one year before Census,Persons
+SAS09,Small Area Statistics Table 09,All economically active (EA) residents,"Residents aged 16 and over, employees and self-employed",Persons
+SAS10,Small Area Statistics Table 10,Tenure and amenities,"Households with residents, residents in households",Households and Persons
+SAS11,Small Area Statistics Table 11,Household dwelling type and occupancy,"Household spaces, rooms in household spaces, rooms in hotels and boarding houses",Households
+SAS12,Small Area Statistics Table 12,Private households,"Households with residents, residents in households, cars in households",Households and Persons
+SAS13,Small Area Statistics Table 13,Private households tenure,"Households with residents, residents in households, rooms in household spaces",Households and Persons
+SAS14,Small Area Statistics Table 14,Private households: residents|rooms,Households with residents; residents and rooms in household spaces,Households and Persons
+SAS15,Small Area Statistics Table 15,Private households with residents,Households with residents; residents in households,Households
+SAS16,Small Area Statistics Table 16,Private households with persons present,"Households with persons present but not residents; <br>Persons present, rooms and cars in such households",Households
+SAS17,Small Area Statistics Table 17,Households: 1971/1981 bases,"Line 1: 1981 households with persons present (1971 population base): present residents and visitors, rooms; <br>Line 2: 1981 households* (1981 population base): present and absent residents, rooms.",Households and Persons
+SAS18,Small Area Statistics Table 18,Dependants in households,Households with residents; residents in households,Households and Persons
+SAS19,Small Area Statistics Table 19,Women in 'couples'; economic position,Married women resident in households of married male plus one married female with or without persons aged 0 - 15; <br>Number of children aged 0 - 15 in such households,Persons
+SAS20,Small Area Statistics Table 20,Residents aged 16 or over,"Households with residents, residents in households",Persons
+SAS21,Small Area Statistics Table 21,Age and marital status of household residents,Residents in households,Persons
+SAS22,Small Area Statistics Table 22,Earners' and dependant children,Households with residents; residents adults; resident dependant children,Persons
+SAS23,Small Area Statistics Table 23,Married women in households,Economically active married women in households,Persons
+SAS24,Small Area Statistics Table 24,Young adults,Residents aged 16 - 24 in households,Persons
+SAS25,Small Area Statistics Table 25,Children 0 - 15 in households,Households with residents; residents in households,Persons
+SAS26,Small Area Statistics Table 26,Headship,Residents in households,Persons
+SAS27,Small Area Statistics Table 27,Lone 'parents',Lone 'parents' in households with person(s) aged 0 - 15; persons aged 0 - 15 in such households,Persons
+SAS28,Small Area Statistics Table 28,Shared accommodation,Households with residents not in self-contained accommodation; rooms in such households,Households and Persons
+SAS29,Small Area Statistics Table 29,Household dwelling type; household composition,"Households with residents; Residents aged 0 - 15, and aged 60+ (females) and 65+ (males)",Households and Persons
+SAS30,Small Area Statistics Table 30,Migrants,Residents with different address one year before Census,Households and Persons
+SAS31,Small Area Statistics Table 31,Private households with dependant children,Private households with 1 or more resident(s) aged 0 - 15; Residents in such houses,Households
+SAS32,Small Area Statistics Table 32,Private households with 1 or more residents of pensionable age,Residents in such households,Households and Persons
+SAS33,Small Area Statistics Table 33,Household spaces,"Permanent buildings, non-permanent accommodation",Households
+SAS34,Small Area Statistics Table 34,"Resident household spaces, rooms",Residents in private households,Households and Persons
+SAS35,Small Area Statistics Table 35,"Resident household spaces, rooms",Amenities and tenure,Households
+SAS36,Small Area Statistics Table 36,Private households with resident heads born in the New Commonwealth or Pakistan,Households,Households
+SAS37,Small Area Statistics Table 37,Residents in private households,Age and birthplace of residents,Persons
+SAS38,Small Area Statistics Table 38,"Households with residents, rooms",Resident persons in owner-occupied accommodation in permanent buildings,Households and Persons
+SAS39,Small Area Statistics Table 39,Welsh speakers,Persons aged 3 and over; present and absent household residents,Persons
+SAS40,Small Area Statistics Table 40,Gaelic speakers,"",Persons
+SAS41,Small Area Statistics Table 41,Scottish household type in permanent buildings by age of residents,All persons,Households
+SAS42,Small Area Statistics Table 42,Scottish households in permanent buildings,Amenities and number of rooms in such households,Households
+SAS43,Small Area Statistics Table 43,Scottish households with persons ages 16 or over,Tenure and amenities; migrant heads in such households,Households and Persons
+SAS44,Small Area Statistics Table 44,SEG of residents aged 16 or over in employment (10% Sample),"",Persons
+SAS45,Small Area Statistics Table 45,"Residents, private households with residents (100% and 10% Sample)","",Persons
+SAS46,Small Area Statistics Table 46,Industry of persons in employment (10% Sample),Residents aged 16 or over in employment,Persons
+SAS47,Small Area Statistics Table 47,Travel to work and SEG (10% Sample),Residents aged 16 and over in employment,Persons
+SAS48,Small Area Statistics Table 48,Qualified manpower (10% Sample),Residents aged 18 and over,Persons
+SAS49,Small Area Statistics Table 49,SEG of households (10% Sample),Households with residents; residents in households,Households and Persons
+SAS50,Small Area Statistics Table 50,SEG and economic position (10% Sample),Economically active residents,Persons
+SAS51,Small Area Statistics Table 51,Industry and employment status (10% Sample),"Residents aged 16 and over, employees and self-employed",Persons
+SAS52,Small Area Statistics Table 52,Social class of households (10% Sample),Households with residents; residents in households,Households and Persons
+SAS53,Small Area Statistics Table 53,Former industry of unemployed (10% Sample),Residents,Persons
