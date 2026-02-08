@@ -1,0 +1,16 @@
+{
+  "created": "2026-02-03T22:37:50.950207",
+  "approach": "Option B: District-level aggregation",
+  "years": [
+    1981,
+    1991
+  ],
+  "geography": "Manchester district (03BN)",
+  "notes": {
+    "1981": "Ward-level data aggregated to district",
+    "1991": "District-level data (original granularity)",
+    "chinese_definition_1981": "Country of birth (Far East) - proxy measure",
+    "chinese_definition_1991": "Ethnic group (Chinese) - direct measure",
+    "comparability": "Limited due to different Chinese identification methods"
+  }
+}

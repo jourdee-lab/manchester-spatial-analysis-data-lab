@@ -1,4 +1,4 @@
-# Phase 6 Indicator Configuration
+# Phase 6 Structure 
 # ================================
 # Defines indicators for small-area analysis of Chinese immigrant integration
 # in Manchester (1981, 1991, 2001)
@@ -245,39 +245,222 @@ years:
       note: "Optional: Combines PCT_OVERCROWD_GT1P5, PCT_NO_BATH_OR_WC (normalized to 0-1)"
 
   1991:
-    # Placeholder structure for 1991 data
-    # Actual SAS codes to be populated after 1991 data ingestion
+    # =====================================================
+    # 1991 Census Tables (Verified from variable lookup)
+    # =====================================================
+    # Core tables: S02EWS (demographics), S06EWS (ethnic group), S07EWS (country of birth),
+    #              S09EWS (economic position), S16EW (tenure & amenities)
+    # Note: 1991 uses 's0XXXXX' format (no year prefix in raw data)
+    
+    # =====================================================
+    # S02EWS: DEMOGRAPHIC BASE (Total Population)
+    # =====================================================
     TOTAL_RES:
-      table: sas02
-      code: 91sas020001  # TBD
+      table: s02ews
+      code: s020001
       description: "All ages TOTAL Persons (Residents)"
       type: denominator
+      note: "Base denominator for all population rates"
     
-    CHINESE_BORN:
-      table: sas04
-      code: 91sas040359  # TBD
-      description: "Total persons born in Far East"
+    TOTAL_MALE:
+      table: s02ews
+      code: s020002
+      description: "All ages Male Persons"
       type: raw
     
-    PCT_CHINESE_BORN:
-      table: sas04
-      code: 91sas040359  # TBD
-      description: "Far East-born as % of total population"
+    TOTAL_FEMALE:
+      table: s02ews
+      code: s020005
+      description: "All ages Female Persons"
+      type: raw
+    
+    # =====================================================
+    # S06EWS: ETHNIC GROUP (PRIMARY for Chinese identification)
+    # =====================================================
+    CHINESE_ETHNIC:
+      table: s06ews
+      code: s060009
+      description: "Persons of Chinese ethnic group (self-identified)"
+      type: raw
+      priority: PRIMARY
+      note: "Direct ethnic identification - superior to 1981 country-of-birth proxy"
+    
+    CHINESE_ETHNIC_MALE:
+      table: s06ews
+      code: s060021
+      description: "Chinese ethnic group - Male"
+      type: raw
+    
+    CHINESE_ETHNIC_FEMALE:
+      table: s06ews
+      code: s060033
+      description: "Chinese ethnic group - Female"
+      type: raw
+    
+    CHINESE_AGE_0_4:
+      table: s06ews
+      code: s060045
+      description: "Chinese ethnic group - Age 0-4"
+      type: raw
+    
+    CHINESE_AGE_5_15:
+      table: s06ews
+      code: s060057
+      description: "Chinese ethnic group - Age 5-15"
+      type: raw
+    
+    CHINESE_AGE_16_29:
+      table: s06ews
+      code: s060069
+      description: "Chinese ethnic group - Age 16-29"
+      type: raw
+    
+    CHINESE_AGE_30_PENSION:
+      table: s06ews
+      code: s060081
+      description: "Chinese ethnic group - Age 30 to pensionable age"
+      type: raw
+    
+    CHINESE_PENSIONABLE:
+      table: s06ews
+      code: s060093
+      description: "Chinese ethnic group - Pensionable age and over"
+      type: raw
+    
+    CHINESE_LIMITING_ILLNESS:
+      table: s06ews
+      code: s060105
+      description: "Chinese ethnic group - Has limiting long-term illness"
+      type: raw
+    
+    PCT_CHINESE_ETHNIC:
+      table: s06ews
+      code: s060009
+      description: "Chinese ethnic group as % of total population"
       type: rate
       denominator: TOTAL_RES
+      calculation: "100 * CHINESE_ETHNIC / TOTAL_RES"
+      note: "Key integration indicator: ethnic presence (1991 direct measure)"
     
-    TOTAL_HH:
-      table: sas10
-      code: 91sas100929  # TBD
-      description: "Households with residents (TOTAL tenure)"
+    # =====================================================
+    # S07EWS: COUNTRY OF BIRTH (SUPPLEMENTARY for comparison)
+    # =====================================================
+    CHINA_BORN_MALE:
+      table: s07ews
+      code: s070041
+      description: "Persons born in China (PRC) - Male"
+      type: raw
+    
+    CHINA_BORN_FEMALE:
+      table: s07ews
+      code: s070042
+      description: "Persons born in China (PRC) - Female"
+      type: raw
+    
+    CHINA_BORN:
+      derived_from: ["CHINA_BORN_MALE", "CHINA_BORN_FEMALE"]
+      calculation: "CHINA_BORN_MALE + CHINA_BORN_FEMALE"
+      description: "Persons born in China (mainland) - Total"
+      type: derived
+      note: "For longitudinal comparison with 1981 Far East births"
+    
+    PCT_CHINA_BORN:
+      derived_from: ["CHINA_BORN", "TOTAL_RES"]
+      description: "China-born as % of total population"
+      type: rate
+      denominator: TOTAL_RES
+      calculation: "100 * CHINA_BORN / TOTAL_RES"
+    
+    # =====================================================
+    # S09EWS: ECONOMIC POSITION (Chinese-specific)
+    # =====================================================
+    CHINESE_16PLUS:
+      table: s09ews
+      code: s090005
+      description: "Chinese and other groups - Total (aged 16+)"
+      type: raw
+      note: "Denominator for Chinese economic activity rates"
+    
+    CHINESE_ECON_ACTIVE_MALE:
+      table: s09ews
+      code: s090017
+      description: "Chinese economically active - Male"
+      type: raw
+    
+    CHINESE_UNEMPLOYED_MALE:
+      table: s09ews
+      code: s090023
+      description: "Chinese unemployed - Male"
+      type: raw
+    
+    CHINESE_ECON_INACTIVE_MALE:
+      table: s09ews
+      code: s090029
+      description: "Chinese economically inactive - Male"
+      type: raw
+    
+    CHINESE_ECON_ACTIVE_FEMALE:
+      table: s09ews
+      code: s090041
+      description: "Chinese economically active - Female"
+      type: raw
+    
+    CHINESE_UNEMPLOYED_FEMALE:
+      table: s09ews
+      code: s090047
+      description: "Chinese unemployed - Female"
+      type: raw
+    
+    CHINESE_ECON_INACTIVE_FEMALE:
+      table: s09ews
+      code: s090053
+      description: "Chinese economically inactive - Female"
+      type: raw
+    
+    CHINESE_EMP_RATE:
+      derived_from: ["CHINESE_ECON_ACTIVE_MALE", "CHINESE_ECON_ACTIVE_FEMALE", "CHINESE_16PLUS"]
+      calculation: "100 * (CHINESE_ECON_ACTIVE_MALE + CHINESE_ECON_ACTIVE_FEMALE) / CHINESE_16PLUS"
+      description: "Chinese economic activity rate"
+      type: rate
+    
+    # =====================================================
+    # S49EW: HOUSEHOLDS BY ETHNIC GROUP (Chinese-specific housing)
+    # =====================================================
+    CHINESE_HOUSEHOLDS:
+      table: s49ew
+      code: s490005
+      description: "Chinese and other groups - Total households"
       type: denominator
     
-    PCT_NO_CAR:
-      table: sas10
-      code: 91sas100949  # TBD
-      description: "No-car households as % of total"
+    CHINESE_OVERCROWD_1_1P5:
+      table: s49ew
+      code: s490012
+      description: "Chinese households - 1-1.5 persons per room"
+      type: raw
+    
+    CHINESE_OVERCROWD_GT1P5:
+      table: s49ew
+      code: s490019
+      description: "Chinese households - Over 1.5 persons per room"
+      type: raw
+    
+    CHINESE_OWNER_OCC:
+      table: s49ew
+      code: s490026
+      description: "Chinese households - Owner occupied"
+      type: raw
+    
+    PCT_CHINESE_OWNER_OCC:
+      derived_from: ["CHINESE_OWNER_OCC", "CHINESE_HOUSEHOLDS"]
+      calculation: "100 * CHINESE_OWNER_OCC / CHINESE_HOUSEHOLDS"
+      description: "Chinese owner-occupation rate"
       type: rate
-      denominator: TOTAL_HH
+    
+    PCT_CHINESE_OVERCROWD:
+      derived_from: ["CHINESE_OVERCROWD_GT1P5", "CHINESE_HOUSEHOLDS"]
+      calculation: "100 * CHINESE_OVERCROWD_GT1P5 / CHINESE_HOUSEHOLDS"
+      description: "Chinese severe overcrowding rate (>1.5 pp/room)"
+      type: rate
 
   2001:
     # Placeholder structure for 2001 data

@@ -22,14 +22,10 @@ Read all sections in order, then execute
 
 ### Executive Summary
 
-Phase 6 has been **successfully completed** with a **production-ready framework** for:
-
 1. **Defining 29 census-derived indicators** (demographic, ethnic presence, housing, employment)
 2. **Ingesting raw 5-part SAS CSV files** to ED-level format (1,017 Manchester EDs)
 3. **Computing indicators automatically** from YAML specification
 4. **Exporting map-ready spatial datasets** (GeoPackage format)
-
-**All code is written, tested, and documented. Ready to process your raw data files.**
 
 ### What Was Created This Session
 

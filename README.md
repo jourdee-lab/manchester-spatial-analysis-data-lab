@@ -222,7 +222,7 @@ cat data/processed/indicators/1981/indicators_summary.txt
   - `data/processed/indicators/1981/manchester_eds_1981_indicators.csv`
   - `docs/phase6_indicator_documentation/` (metadata, summaries)
 
-### Phase 7: Mapping & Analysis (In Progress ⏳)
+### Phase 7: Mapping & Analysis (In Progress)
 
 - Create QGIS choropleths
 - Statistical analysis (correlation, clustering)
