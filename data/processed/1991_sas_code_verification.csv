@@ -1,0 +1,9 @@
+category,indicator,table,code,status,lookup_description,expected_description
+Demographics,TOTAL_RES,S02EWS,S020001,FOUND,All ages // TOTAL: Persons // Persons // Residents,All ages TOTAL Persons
+Demographics,PCT_MALE,S02EWS,S020002,FOUND,All ages // Male // Persons // Residents,All ages Male
+Ethnic/Country of Birth,CHINESE_BORN,S07EWS,S070001,FOUND,All Countries of Birth // Male // Persons // Residents,Total persons born (China/Far East)
+Employment,EMPLOYED,S09EWS,S090001,FOUND,TOTAL: Persons // TOTAL: Persons // Persons // Residents aged 16 and over,Employed residents
+Employment,UNEMPLOYED,S09EWS,S090002,FOUND,White // TOTAL: Persons // Persons // Residents aged 16 and over,Unemployed residents
+Housing,TOTAL_HH,S16EWS,S160001,FOUND,TOTAL: Wholly Moving Households // Moved between districts but within county // Households // Wholly moving households; residents in such households,Households with residents (TOTAL tenure)
+Housing,OWNER_OCC_HH,S16EWS,S160010,FOUND,Total Persons in Wholly Moving Households // All types of move // Persons // Wholly moving households; residents in such households,Owner-occupied households
+Housing,NO_CAR_HH,S16EWS,S160020,NOT_FOUND,,Households with no car
