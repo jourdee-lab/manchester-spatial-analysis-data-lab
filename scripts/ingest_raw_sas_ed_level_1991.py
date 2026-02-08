@@ -1,34 +1,49 @@
 #!/usr/bin/env python3
 """
-Ingest Raw SAS ED-Level Data (1981)
+Ingest Raw SAS ED-Level Data (1991)
 ===================================
 
-Loads 5-part raw CSV files for each SAS table (02, 04, 07, 10) and:
+Loads 4-part raw CSV files for each SAS table (s02, s06, s07, s20) and:
 1. Concatenates the parts horizontally (wide format)
 2. Filters to Manchester EDs (zoneid starts with '03BN')
 3. Outputs clean ED-level CSVs per table
-4. Validates against combined aggregated files
+4. Validates data integrity
 
 Input Structure (expected):
-  data/raw/sas/
-  ├── 1981_sas02_part1.csv through 1981_sas02_part5.csv
-  ├── 1981_sas04_part1.csv through 1981_sas04_part5.csv
-  ├── 1981_sas07_part1.csv through 1981_sas07_part5.csv
-  └── 1981_sas10_part1.csv through 1981_sas10_part5.csv
+  data/raw/
+  ├── s02ews/  (Demographics - Age and marital status)
+  │   ├── s02ews1.csv through s02ews4.csv
+  ├── s06ews/  (Ethnic Group)
+  │   ├── s06ews1.csv through s06ews4.csv
+  ├── s07ews/  (Country of Birth)
+  │   ├── s07ews1.csv through s07ews4.csv
+  ├── s09ews/  (Economic Position)
+  │   ├── s09ews1.csv through s09ews4.csv
+  ├── s16ew+s/ (Tenure and Amenities)
+  │   ├── s16ew1.csv through s16ew4.csv
+  └── s81ews/  (Communal Establishments)
+      ├── s81ews1.csv through s81ews4.csv
 
 Output Structure:
-  data/processed/raw_ed_level/1981/
-  ├── sas02_1981_ed_level.csv  (1,017 EDs × 161 columns)
-  ├── sas04_1981_ed_level.csv  (1,017 EDs × 61 columns)
-  ├── sas07_1981_ed_level.csv  (1,017 EDs × 28 columns)
-  └── sas10_1981_ed_level.csv  (1,017 EDs × 221 columns)
+  data/processed/raw_ed_level/1991/
+  ├── sas02_1991_ed_level.csv  (Demographics)
+  ├── sas06_1991_ed_level.csv  (Ethnic Group)
+  ├── sas07_1991_ed_level.csv  (Country of Birth)
+  ├── sas09_1991_ed_level.csv  (Economic Position)
+  ├── sas20_1991_ed_level.csv  (Tenure/Amenities)
+  └── sas81_1991_ed_level.csv  (Communal)
+
+Note on 1991 data structure:
+- 1991 census data uses 'sXXXXXX' column naming (e.g., s020001, s060100)
+- NOT prefixed with '91' like 1981 data (81sas020001)
+- Data split across 4 parts per table (vs. 5 for 1981)
+- Same Manchester prefix: '03BN'
 
 Author: FYP Data Pipeline
-Date: 2026-01-14
+Date: 2026-01-18
 """
 
 import pandas as pd
-import yaml
 from pathlib import Path
 import logging
 from typing import Dict, List, Tuple
@@ -44,33 +59,51 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # =====================================================================
 
-RAW_DATA_DIR = Path("data/raw/sas")
-OUTPUT_DIR = Path("data/processed/raw_ed_level/1981")
-COMBINED_DATA_DIR = Path("data/processed/aggregates/census_1981")
+RAW_DATA_DIR = Path("data/raw")
+OUTPUT_DIR = Path("data/processed/raw_ed_level/1991")
 
 MANCHESTER_PREFIX = "03BN"
+YEAR = 1991
 
-# SAS table configurations
+# SAS table configurations for 1991
+# Note: 1991 uses different table labels (s02ews, s06ews, etc.)
+# But we standardize output naming (sas02, sas06, etc.) for consistency
 SAS_TABLES = {
     "sas02": {
-        "parts": 5,
-        "description": "Demographics (Total Population)",
-        "expected_cols": 161,
+        "raw_prefix": "s02ews",
+        "parts": 4,
+        "description": "Demographics (Age & Marital Status)",
+        "expected_cols": 155,  # Approximate; will validate at runtime
     },
-    "sas04": {
-        "parts": 5,
-        "description": "Country of Birth",
-        "expected_cols": 61,
+    "sas06": {
+        "raw_prefix": "s06ews",
+        "parts": 4,
+        "description": "Ethnic Group",
+        "expected_cols": 12,   # Approximate
     },
     "sas07": {
-        "parts": 5,
-        "description": "Employment",
-        "expected_cols": 28,
+        "raw_prefix": "s07ews",
+        "parts": 4,
+        "description": "Country of Birth",
+        "expected_cols": 61,   # Approximate
     },
-    "sas10": {
-        "parts": 5,
-        "description": "Housing & Tenure",
-        "expected_cols": 221,
+    "sas09": {
+        "raw_prefix": "s09ews",
+        "parts": 4,
+        "description": "Economic Position",
+        "expected_cols": 52,   # Approximate
+    },
+    "sas20": {
+        "raw_prefix": "s16ew",
+        "parts": 4,
+        "description": "Tenure and Amenities",
+        "expected_cols": 227,  # Approximate; includes full housing data
+    },
+    "sas81": {
+        "raw_prefix": "s81ews",
+        "parts": 4,
+        "description": "Communal Establishments",
+        "expected_cols": 28,   # Approximate
     },
 }
 
@@ -78,31 +111,29 @@ SAS_TABLES = {
 # FUNCTIONS
 # =====================================================================
 
-def load_raw_table_parts(table_name: str, year: int = 1981) -> Tuple[pd.DataFrame, bool]:
+def load_raw_table_parts(table_name: str, raw_prefix: str, num_parts: int) -> Tuple[pd.DataFrame, bool]:
     """
-    Load and concatenate the 5 raw CSV parts for a SAS table.
+    Load and concatenate the raw CSV parts for a SAS table.
     
     Args:
-        table_name: e.g., 'sas02', 'sas04'
-        year: Census year (default 1981)
+        table_name: Standardized name (e.g., 'sas02')
+        raw_prefix: Raw file prefix (e.g., 's02ews')
+        num_parts: Number of parts to load
     
     Returns:
         Tuple of (DataFrame, success_bool)
     """
     
-    table_config = SAS_TABLES[table_name]
-    num_parts = table_config["parts"]
-    
-    logger.info(f"\nLoading {table_name} ({num_parts} parts)...")
+    logger.info(f"\nLoading {table_name} ({num_parts} parts, prefix={raw_prefix})...")
     
     dfs = []
     for part_num in range(1, num_parts + 1):
-        fpath = RAW_DATA_DIR / f"{year}_{table_name}_part{part_num}.csv"
+        # Build file path: data/raw/{raw_prefix}/{raw_prefix}{part_num}.csv
+        fpath = RAW_DATA_DIR / raw_prefix / f"{raw_prefix}{part_num}.csv"
         
         if not fpath.exists():
             logger.warning(f"  ⚠ Part {part_num} not found: {fpath}")
             logger.warning(f"    Expected at: {fpath}")
-            logger.warning(f"    Please ensure raw files are in: {RAW_DATA_DIR}")
             return None, False # pyright: ignore[reportReturnType]
         
         try:
@@ -113,18 +144,14 @@ def load_raw_table_parts(table_name: str, year: int = 1981) -> Tuple[pd.DataFram
             logger.error(f"  ✗ Error reading part {part_num}: {e}")
             return None, False # pyright: ignore[reportReturnType]
     
-    # Concatenate parts horizontally
-    # Assume first column (zoneid) is common; use it as merge key
+    # Concatenate parts horizontally on zoneid
     if dfs:
         # First part as base
         result = dfs[0].copy()
         
-        # Merge subsequent parts on zoneid (assuming same ED order)
+        # Merge subsequent parts on zoneid
         for i, df in enumerate(dfs[1:], 2):
-            # Drop zoneid from subsequent parts to avoid duplication
-            # (assuming they're already in the same order)
             try:
-                # If they have the same zoneid, merge on it
                 result = result.merge(df, on='zoneid', how='inner')
                 logger.info(f"  → Part {i} merged: {result.shape[1]} total columns")
             except Exception as e:
@@ -163,62 +190,37 @@ def filter_to_manchester(df: pd.DataFrame, table_name: str) -> Tuple[pd.DataFram
     
     return manchester, count
 
-def validate_against_combined(ed_df: pd.DataFrame, table_name: str) -> bool:
+def validate_data_integrity(ed_df: pd.DataFrame, table_name: str) -> bool:
     """
-    Validate ED-level data against the combined aggregate file.
+    Validate ED-level data for basic integrity.
     
     Args:
-        ed_df: ED-level data (1,017 rows)
+        ed_df: ED-level data
         table_name: e.g., 'sas02'
     
     Returns:
         Boolean indicating validation success
     """
     
-    # Map table names to combined file names
-    table_map = {
-        "sas02": "1981_sas02_totalpop_combined.csv",
-        "sas04": "1981_sas04_birth_combined.csv",
-        "sas07": "1981_sas07_employment_combined.csv",
-        "sas10": "1981_sas10_housing_combined.csv",
-    }
-    
-    combined_file = COMBINED_DATA_DIR / table_map[table_name]
-    
-    if not combined_file.exists():
-        logger.warning(f"  ⚠ Combined file not found for validation: {combined_file}")
-        return True  # Skip validation if file doesn't exist
-    
     try:
-        combined = pd.read_csv(combined_file)
-        
-        # Sum ED-level data for Manchester EDs
-        numeric_cols = ed_df.select_dtypes(include=['int64', 'float64']).columns
-        ed_sums = ed_df[numeric_cols].sum()
-        
-        # Get combined values (should be single row with zoneid='03BN')
-        combined_row = combined.iloc[0]
-        
-        # Compare (allow 1% tolerance for rounding)
-        mismatches = []
-        for col in numeric_cols:
-            if col in combined.columns:
-                ed_val = ed_sums.get(col, 0)
-                combined_val = combined_row.get(col, 0)
-                
-                if ed_val != combined_val:
-                    pct_diff = abs(ed_val - combined_val) / max(abs(combined_val), 1) * 100
-                    if pct_diff > 1:  # Flag if > 1% difference
-                        mismatches.append((col, ed_val, combined_val, pct_diff))
-        
-        if mismatches:
-            logger.warning(f"  ⚠ Validation: {len(mismatches)} columns have > 1% difference")
-            for col, ed_val, combined_val, pct_diff in mismatches[:5]:
-                logger.warning(f"    {col}: ED sum={ed_val:.0f}, Combined={combined_val:.0f} ({pct_diff:.1f}% diff)")
+        # Check for duplicate zoneids
+        if ed_df['zoneid'].duplicated().any():
+            logger.warning(f"  ⚠ Duplicate zoneids found in {table_name}")
             return False
-        else:
-            logger.info(f"  ✓ Validation passed: ED sums match combined aggregate")
-            return True
+        
+        # Check for missing zoneid
+        if ed_df['zoneid'].isna().any():
+            logger.warning(f"  ⚠ Missing zoneids in {table_name}")
+            return False
+        
+        # Check numeric columns for negative values (shouldn't occur in census data)
+        numeric_cols = ed_df.select_dtypes(include=['int64', 'float64']).columns
+        if (ed_df[numeric_cols] < 0).any().any():
+            logger.warning(f"  ⚠ Negative values found in {table_name}")
+            return False
+        
+        logger.info(f"  ✓ Data integrity validated")
+        return True
     
     except Exception as e:
         logger.warning(f"  ⚠ Validation error: {e}")
@@ -238,7 +240,7 @@ def save_ed_level_csv(ed_df: pd.DataFrame, table_name: str, output_dir: Path) ->
     """
     
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / f"{table_name}_1981_ed_level.csv"
+    output_file = output_dir / f"{table_name}_1991_ed_level.csv"
     
     try:
         ed_df.to_csv(output_file, index=False)
@@ -260,7 +262,7 @@ def generate_summary_report(results: Dict) -> str:
     """
     
     report = "\n" + "="*70 + "\n"
-    report += "SUMMARY: Raw SAS ED-Level Data Ingestion (1981)\n"
+    report += "SUMMARY: Raw SAS ED-Level Data Ingestion (1991)\n"
     report += "="*70 + "\n\n"
     
     success_count = sum(1 for r in results.values() if r.get("success"))
@@ -282,17 +284,17 @@ def main():
     """Main pipeline."""
     
     logger.info("="*70)
-    logger.info("INGEST RAW SAS ED-LEVEL DATA (1981)")
+    logger.info("INGEST RAW SAS ED-LEVEL DATA (1991)")
     logger.info("="*70)
     
     # Check if raw data directory exists
     if not RAW_DATA_DIR.exists():
         logger.error(f"✗ Raw data directory not found: {RAW_DATA_DIR}")
-        logger.error(f"  Expected raw files in: {RAW_DATA_DIR}")
-        logger.error(f"  Expected filenames:")
-        for table in SAS_TABLES:
-            for part in range(1, SAS_TABLES[table]["parts"] + 1):
-                logger.error(f"    1981_{table}_part{part}.csv")
+        logger.error(f"  Expected structure:")
+        for table, config in SAS_TABLES.items():
+            prefix = config["raw_prefix"]
+            for part in range(1, config["parts"] + 1):
+                logger.error(f"    {RAW_DATA_DIR}/{prefix}/{prefix}{part}.csv")
         return False
     
     results = {}
@@ -304,7 +306,12 @@ def main():
         logger.info(f"{'─'*70}")
         
         # Load raw parts
-        raw_df, load_success = load_raw_table_parts(table_name)
+        raw_df, load_success = load_raw_table_parts(
+            table_name,
+            table_config["raw_prefix"],
+            table_config["parts"]
+        )
+        
         if not load_success:
             logger.error(f"✗ Failed to load {table_name}")
             results[table_name] = {
@@ -326,8 +333,8 @@ def main():
             }
             continue
         
-        # Validate against combined
-        validation_ok = validate_against_combined(manchester_df, table_name)
+        # Validate data integrity
+        validation_ok = validate_data_integrity(manchester_df, table_name)
         
         # Save to CSV
         save_ok = save_ed_level_csv(manchester_df, table_name, OUTPUT_DIR)
@@ -351,7 +358,7 @@ def main():
         logger.info(f"  Output directory: {OUTPUT_DIR}")
         logger.info(f"\nNext step:")
         logger.info(f"  1. Update Phase 6 config to use: {OUTPUT_DIR}")
-        logger.info(f"  2. Run: python scripts/phase6_compute_indicators_1981.py")
+        logger.info(f"  2. Run: python scripts/phase6_compute_indicators_1991.py")
         return True
     else:
         logger.error("✗ Some tables failed to ingest")
