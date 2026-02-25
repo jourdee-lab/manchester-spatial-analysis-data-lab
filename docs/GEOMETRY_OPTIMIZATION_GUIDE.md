@@ -132,7 +132,7 @@ Options:
 #### GeoPackage to GeoJSON Conversion:
 ```python
 # Using the project's conversion script
-python scripts/convert_gpkg_to_geojson.py \
+python scripts/utils_convert_gpkg_to_geojson.py \
   --input data/processed/outputs/spatial/1991/manchester_eds_1991.gpkg \
   --output public/geojson/manchester_eds_1991.geojson \
   --simplify 15

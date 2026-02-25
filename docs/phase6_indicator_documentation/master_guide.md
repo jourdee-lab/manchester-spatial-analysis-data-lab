@@ -33,10 +33,9 @@ Read all sections in order, then execute
 - `configs/indicators.yml` (362 lines) — 29 indicator definitions with formulas
 - `configs/sas_raw_file_mapping.yml` — Raw file structure documentation
 
-**Code (3 Python scripts, 1,650 lines total):**
-- `scripts/phase6_compute_indicators_1981.py` (520 lines) — Original version
-- `scripts/phase6_compute_indicators_1981_ed_level.py` (550 lines) — ED-level with auto-detection
-- `scripts/ingest_raw_sas_ed_level_1981.py` (560 lines) — Raw data ingestion
+**Code (2 Python scripts):**
+- `scripts/04_compute_indicators_1981_eds.py` — ED-level indicator computation with auto-detection
+- `scripts/01_ingest_1981_eds.py` — Raw data ingestion
 
 **QGIS:**
 - `qgis/phase6_indicator_mapping_1981.qgz` — Template project (CRS EPSG:27700)
@@ -57,7 +56,7 @@ Raw SAS Files (20 CSVs)
 │ (112,261 national EDs per file)
 │
 ↓
-[ingest_raw_sas_ed_level_1981.py]
+[01_ingest_1981_eds.py]
 │ • Load 5-part files per table
 │ • Concatenate horizontally on 'zoneid'
 │ • Filter to Manchester (03BN prefix)
@@ -68,7 +67,7 @@ ED-Level SAS Data (4 CSVs)
 │ (1,017 Manchester EDs × SAS columns per table)
 │
 ↓
-[phase6_compute_indicators_1981_ed_level.py]
+[04_compute_indicators_1981_eds.py]
 │ • Load YAML configuration
 │ • Phase 1: Raw counts + denominators
 │ • Phase 2: Derived rates (numerator/denominator)
@@ -231,12 +230,8 @@ Then **copy your 20 raw CSV files** to this directory:
 ### Step 2: Ingest Raw SAS Data to ED-Level (5 min execution)
 
 ```bash
-python scripts/ingest_raw_sas_ed_level_1981.py
+python scripts/01_ingest_1981_eds.py
 ```
-
-**Expected output:**
-```
-✓ data/processed/raw_ed_level/1981/sas02_1981_ed_level.csv (1017 rows)
 ✓ data/processed/raw_ed_level/1981/sas04_1981_ed_level.csv (1017 rows)
 ✓ data/processed/raw_ed_level/1981/sas07_1981_ed_level.csv (1017 rows)
 ✓ data/processed/raw_ed_level/1981/sas10_1981_ed_level.csv (1017 rows)
@@ -253,14 +248,13 @@ python scripts/ingest_raw_sas_ed_level_1981.py
 ### Step 3: Compute Indicators from ED-Level Data (2 min execution)
 
 ```bash
-python scripts/phase6_compute_indicators_1981_ed_level.py
+python scripts/04_compute_indicators_1981_eds.py
 ```
 
 **Expected output:**
 ```
-✓ data/processed/indicators/1981/manchester_eds_1981_indicators.csv (1017 × 30)
-✓ docs/phase6_indicator_documentation/indicators_1981_metadata.json
-✓ docs/phase6_indicator_documentation/indicators_1981_summary.json
+✓ data/processed/indicators/1981/manchester_eds_1981_indicators.csv (1017 rows)
+✓ data/processed/raw_ed_level/1981/sas02_1981_ed_level.csv (1017 rows)
 
 Phase 1: Load raw counts + denominators... OK (15 indicators)
 Phase 2: Compute derived rates... OK (14 indicators)
@@ -347,7 +341,7 @@ qgis qgis/phase6_indicator_mapping_1981.qgz
 
 ```bash
 # Run ingestion script
-python scripts/ingest_raw_sas_ed_level_1981.py
+python scripts/01_ingest_1981_eds.py
 ```
 
 **Script behavior:**
@@ -436,7 +430,7 @@ Composite indices derived from other indicators
 
 ```bash
 # Execute indicator computation
-python scripts/phase6_compute_indicators_1981_ed_level.py
+python scripts/04_compute_indicators_1981_eds.py
 ```
 
 **Expected log output:**
@@ -737,7 +731,7 @@ Expected one of:
 ```
 
 **Solutions:**
-1. Verify ingestion script was run: `python scripts/ingest_raw_sas_ed_level_1981.py`
+1. Verify ingestion script was run: `python scripts/01_ingest_1981_eds.py`
 2. Check that raw files exist in `data/raw/sas/`
 3. Verify raw files have `zoneid` column
 4. Check for typos in raw filenames (should be `1981_sas0X_partY.csv`)
@@ -854,12 +848,12 @@ Phase 6 is **SUCCESSFUL** when you can:
 
 ### Script Documentation
 
-**Ingestion script:** `scripts/ingest_raw_sas_ed_level_1981.py`
+**Ingestion script:** `scripts/01_ingest_1981_eds.py`
 - Comprehensive docstrings
 - Function-level documentation
 - Error messages with context
 
-**Computation script:** `scripts/phase6_compute_indicators_1981_ed_level.py`
+**Computation script:** `scripts/04_compute_indicators_1981_eds.py`
 - Detailed comments explaining logic
 - Logging at each phase
 - Metadata generation explanation
@@ -879,7 +873,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Or run with verbose Python:
-python -u scripts/phase6_compute_indicators_1981_ed_level.py 2>&1 | tee computation.log
+python -u scripts/04_compute_indicators_1981_eds.py 2>&1 | tee computation.log
 ```
 
 ---
@@ -917,9 +911,8 @@ python -u scripts/phase6_compute_indicators_1981_ed_level.py 2>&1 | tee computat
 - `configs/sas_raw_file_mapping.yml` — Raw file structure docs
 
 ### Code
-- `scripts/phase6_compute_indicators_1981.py` — Original version (520 lines)
-- `scripts/phase6_compute_indicators_1981_ed_level.py` — ED-level version (550 lines)
-- `scripts/ingest_raw_sas_ed_level_1981.py` — Data ingestion (560 lines)
+- `scripts/04_compute_indicators_1981_eds.py` — ED-level indicator computation
+- `scripts/01_ingest_1981_eds.py` — Data ingestion
 
 ### QGIS
 - `qgis/phase6_indicator_mapping_1981.qgz` — Template project
@@ -944,10 +937,10 @@ mkdir -p data/raw/sas
 # Copy 20 raw CSV files here
 
 # Step 2: Ingest
-python scripts/ingest_raw_sas_ed_level_1981.py
+python scripts/01_ingest_1981_eds.py
 
 # Step 3: Compute
-python scripts/phase6_compute_indicators_1981_ed_level.py
+python scripts/04_compute_indicators_1981_eds.py
 
 # Step 4: Verify
 head data/processed/indicators/1981/manchester_eds_1981_indicators.csv

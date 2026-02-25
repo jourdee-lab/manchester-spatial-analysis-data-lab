@@ -125,13 +125,20 @@ FYP_Data_Pipeline/
 │   └── phase6_indicator_mapping_1981.qgz        # Phase 6 mapping template
 │
 ├── scripts/
-│   ├── ingest_raw_sas_ed_level_1981.py          # Data ingestion (5-part CSVs → ED-level)
-│   ├── phase6_compute_indicators_1981_ed_level.py  # Indicator computation (main)
-│   ├── phase6_compute_indicators_1981.py        # Original version (reference)
-│   ├── phase6_compute_indicators_simple.py      # Simplified version (testing)
-│   ├── prepare_ed_level_census.py               # Phase 5: ED extraction script
-│   ├── validate_join_manual.py                  # Phase 5: Join validation
-│   └── create_qgis_join_project.py              # Phase 5: QGIS project setup
+│   ├── 01_ingest_1981_eds.py                    # Step 1a: Raw data ingestion (1981 EDs)
+│   ├── 02_ingest_1991_eds.py                    # Step 1b: Raw data ingestion (1991 EDs)
+│   ├── 03_ingest_2001_oas.py                    # Step 1c: Raw data ingestion (2001 OAs)
+│   ├── 04_compute_indicators_1981_eds.py        # Step 2a: Compute indicators (1981 EDs)
+│   ├── 05_compute_indicators_1991_eds.py        # Step 2b: Compute indicators (1991 EDs)
+│   ├── 06_compute_indicators_1991_wards.py      # Step 2c: Compute indicators (1991 wards)
+│   ├── 07_compute_indicators_2001_oas.py        # Step 2d: Compute indicators (2001 OAs)
+│   ├── 08_join_boundaries_1981_eds.py           # Step 3a: Spatial join (1981)
+│   ├── 09_join_boundaries_1991_wards.py         # Step 3b: Spatial join (1991)
+│   ├── 10_join_boundaries_2001_oas.py           # Step 3c: Spatial join (2001)
+│   ├── 11_harmonise_ward_boundaries.py          # Step 4: Harmonise ward boundaries
+│   ├── 12_aggregate_2001_oas_to_wards.py        # Step 5: Aggregate 2001 OAs → wards
+│   ├── 13_export_web_geojson.py                 # Step 6: Export GeoJSON for web app
+│   └── utils_convert_gpkg_to_geojson.py        # Utility: Convert GeoPackage → GeoJSON
 │
 ├── master_guide.md                 # Project master guide
 ├── initial_prd.md                  # Initial project requirements
@@ -171,16 +178,26 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt  # (if available)
 ```
 
-### 3. Run Phase 6 Pipeline (1981 Indicators)
+### 3. Run the Full Pipeline
 
 ```bash
-# Step 1: Ingest raw SAS data (creates ED-level CSVs)
-python scripts/ingest_raw_sas_ed_level_1981.py
+# Steps 1–3: Ingest, compute indicators, and spatially join for each decade
+python scripts/01_ingest_1981_eds.py
+python scripts/04_compute_indicators_1981_eds.py
+python scripts/08_join_boundaries_1981_eds.py
 
-# Step 2: Compute indicators
-python scripts/phase6_compute_indicators_1981_ed_level.py
+python scripts/02_ingest_1991_eds.py
+python scripts/06_compute_indicators_1991_wards.py
+python scripts/09_join_boundaries_1991_wards.py
 
-# Output: data/processed/indicators/1981/manchester_eds_1981_indicators.csv
+python scripts/03_ingest_2001_oas.py
+python scripts/07_compute_indicators_2001_oas.py
+python scripts/10_join_boundaries_2001_oas.py
+
+# Step 4–6: Harmonise, aggregate, export
+python scripts/11_harmonise_ward_boundaries.py
+python scripts/12_aggregate_2001_oas_to_wards.py
+python scripts/13_export_web_geojson.py
 ```
 
 ### 4. View Results
@@ -243,11 +260,20 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 | Script | Purpose | Status |
 |--------|---------|--------|
-| `ingest_raw_sas_ed_level_1981.py` | Ingest 20 raw CSVs → ED-level data | ✓ Active |
-| `phase6_compute_indicators_1981_ed_level.py` | Compute 25 indicators from ED data | ✓ Active |
-| `validate_join_manual.py` | Phase 5 join validation | ✓ Active |
-| `prepare_ed_level_census.py` | Phase 5 ED extraction | ✓ Active |
-| `create_qgis_join_project.py` | Phase 5 QGIS setup | ✓ Active |
+| `01_ingest_1981_eds.py` | Ingest 1981 raw CSVs → ED-level data | ✓ Active |
+| `02_ingest_1991_eds.py` | Ingest 1991 raw CSVs → ED-level data | ✓ Active |
+| `03_ingest_2001_oas.py` | Ingest 2001 raw CSVs → OA-level data | ✓ Active |
+| `04_compute_indicators_1981_eds.py` | Compute 25 indicators (1981 EDs) | ✓ Active |
+| `05_compute_indicators_1991_eds.py` | Compute indicators (1991 EDs) | ✓ Active |
+| `06_compute_indicators_1991_wards.py` | Compute indicators (1991 wards) | ✓ Active |
+| `07_compute_indicators_2001_oas.py` | Compute indicators (2001 OAs) | ✓ Active |
+| `08_join_boundaries_1981_eds.py` | Spatial join: 1981 EDs | ✓ Active |
+| `09_join_boundaries_1991_wards.py` | Spatial join: 1991 wards | ✓ Active |
+| `10_join_boundaries_2001_oas.py` | Spatial join: 2001 OAs | ✓ Active |
+| `11_harmonise_ward_boundaries.py` | Harmonise ward boundaries across decades | ✓ Active |
+| `12_aggregate_2001_oas_to_wards.py` | Aggregate 2001 OAs → ward-level | ✓ Active |
+| `13_export_web_geojson.py` | Export GeoJSON for web app | ✓ Active |
+| `utils_convert_gpkg_to_geojson.py` | Utility: GeoPackage → GeoJSON | ✓ Active |
 
 ### Documentation (Key)
 
@@ -377,20 +403,28 @@ joined = boundaries.merge(indicators, left_on='ED81CD', right_on='zoneid', how='
 joined.to_file('outputs/manchester_1981_indicators.gpkg', driver='GPKG')
 ```
 
-### Reproduce Phase 6 Pipeline
+### Reproduce the Full Pipeline
 
 ```bash
-# Full Phase 6 workflow
 source .venv/bin/activate
 
-# Step 1: Ingest (5 minutes)
-python scripts/ingest_raw_sas_ed_level_1981.py
+# Ingest, compute, and join for each decade
+python scripts/01_ingest_1981_eds.py
+python scripts/04_compute_indicators_1981_eds.py
+python scripts/08_join_boundaries_1981_eds.py
 
-# Step 2: Compute indicators (2 minutes)
-python scripts/phase6_compute_indicators_1981_ed_level.py
+python scripts/02_ingest_1991_eds.py
+python scripts/06_compute_indicators_1991_wards.py
+python scripts/09_join_boundaries_1991_wards.py
 
-# Step 3: Validate output
-python -c "import pandas as pd; df = pd.read_csv('data/processed/indicators/1981/manchester_eds_1981_indicators.csv'); print(f'Shape: {df.shape}'); print(df.head())"
+python scripts/03_ingest_2001_oas.py
+python scripts/07_compute_indicators_2001_oas.py
+python scripts/10_join_boundaries_2001_oas.py
+
+# Harmonise, aggregate, and export
+python scripts/11_harmonise_ward_boundaries.py
+python scripts/12_aggregate_2001_oas_to_wards.py
+python scripts/13_export_web_geojson.py
 ```
 
 ---
@@ -421,13 +455,13 @@ pytest tests/
 python scripts/validate_join_manual.py
 ```
 
-### Adding 1991/2001 Data
+### Adding or Extending Data
 
-1. Update `configs/indicators.yml` with 1991/2001 SAS codes
-2. Copy `ingest_raw_sas_ed_level_1981.py` → `ingest_raw_sas_ed_level_1991.py`
-3. Update paths and year parameters
-4. Run ingestion + indicator computation
-5. Perform areal interpolation for boundary changes (Phase 8)
+1. Update `configs/indicators.yml` with new SAS codes if needed
+2. All three decades are already ingested via `01_`–`03_ingest_*.py`
+3. Rerun the relevant `04_`–`07_compute_indicators_*.py` script
+4. Regenerate the harmonised output: `11_harmonise_ward_boundaries.py`
+5. Re-export for the web app: `13_export_web_geojson.py`
 
 ---
 

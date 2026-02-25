@@ -116,13 +116,20 @@ fyp_main/
 │   └── main_join_validation_1981_eds.qgz
 │
 ├── scripts/                           # Python processing scripts
-│   ├── ingest_raw_sas_ed_level_1981.py         # Raw data ingestion
-│   ├── phase6_compute_indicators_1981_ed_level.py  # Indicator computation
-│   ├── phase6_compute_indicators_1981.py       # Alternative version
-│   ├── create_joined_gpkg_1981.py              # GeoPackage creation
-│   ├── validate_join_manual.py                 # Join validation
-│   └── diagnostics/                   # Utility scripts
-│       └── detect_1991_granularity.py
+│   ├── 01_ingest_1981_eds.py                   # Step 1a: Raw data ingestion (1981 EDs)
+│   ├── 02_ingest_1991_eds.py                   # Step 1b: Raw data ingestion (1991 EDs)
+│   ├── 03_ingest_2001_oas.py                   # Step 1c: Raw data ingestion (2001 OAs)
+│   ├── 04_compute_indicators_1981_eds.py       # Step 2a: Indicators (1981 EDs)
+│   ├── 05_compute_indicators_1991_eds.py       # Step 2b: Indicators (1991 EDs)
+│   ├── 06_compute_indicators_1991_wards.py     # Step 2c: Indicators (1991 wards)
+│   ├── 07_compute_indicators_2001_oas.py       # Step 2d: Indicators (2001 OAs)
+│   ├── 08_join_boundaries_1981_eds.py          # Step 3a: Spatial join (1981)
+│   ├── 09_join_boundaries_1991_wards.py        # Step 3b: Spatial join (1991)
+│   ├── 10_join_boundaries_2001_oas.py          # Step 3c: Spatial join (2001)
+│   ├── 11_harmonise_ward_boundaries.py         # Step 4: Harmonise ward boundaries
+│   ├── 12_aggregate_2001_oas_to_wards.py       # Step 5: Aggregate 2001 OAs → wards
+│   ├── 13_export_web_geojson.py                # Step 6: Export GeoJSON for web app
+│   └── utils_convert_gpkg_to_geojson.py       # Utility: Convert GeoPackage → GeoJSON
 │
 ├── notebooks/                         # Jupyter notebooks
 │   └── build_pipeline.ipynb
@@ -285,7 +292,7 @@ RAW CENSUS DATA (1981)
 │ (20 CSV files, 112,261 GB EDs per file)
 │ Source: UK Data Service / EDINA
 │
-├─→ [ingest_raw_sas_ed_level_1981.py]
+├─→ [01_ingest_1981_eds.py]
 │   • Loads 5-part files per SAS table
 │   • Concatenates on zoneid
 │   • Filters to Manchester (03BN*)
@@ -293,7 +300,7 @@ RAW CENSUS DATA (1981)
 │   └─→ ED-LEVEL SAS DATA (4 CSVs)
 │       (1,053 EDs × SAS codes)
 │
-├─→ [phase6_compute_indicators_1981_ed_level.py]
+├─→ [04_compute_indicators_1981_eds.py]
 │   • Reads indicators.yml config
 │   • Computes raw counts (demographics, housing, etc.)
 │   • Derives rates (% calculations)
@@ -302,7 +309,7 @@ RAW CENSUS DATA (1981)
 │   └─→ INDICATOR TABLE (CSV)
 │       (1,053 EDs × 29 indicators)
 │
-├─→ [create_joined_gpkg_1981.py]
+├─→ [08_join_boundaries_1981_eds.py]
 │   • Loads ED shapefile (1,017 Manchester features)
 │   • Joins with indicator CSV on WD81CD (ward code)
 │   • 100% match rate validation
@@ -855,9 +862,9 @@ if len(outliers) > 0:
 ### 1. Code Organization & Standards
 
 **File Naming Convention:**
-- `ingest_raw_sas_ed_level_1981.py` — Clear verb-noun structure
-- `phase6_compute_indicators_1981_ed_level.py` — Includes phase & granularity
-- Version history preserved in commits
+- `01_ingest_1981_eds.py` — Step number + verb + geography + year
+- `04_compute_indicators_1981_eds.py` — Step number + verb + subject + geography
+- Sequential `NN_` prefix makes execution order self-evident
 
 **Code Comments:**
 ```python
@@ -1105,9 +1112,9 @@ def test_percentage_calculation():
 ### Code & Documentation
 
 6. **Python Scripts** (reproducible, commented)
-   - `ingest_raw_sas_ed_level_1981.py`
-   - `phase6_compute_indicators_1981_ed_level.py`
-   - `create_joined_gpkg_1981.py`
+   - `01_ingest_1981_eds.py`
+   - `04_compute_indicators_1981_eds.py`
+   - `08_join_boundaries_1981_eds.py`
    - `validate_join_manual.py`
 
 7. **Configuration Files** (YAML-based)
