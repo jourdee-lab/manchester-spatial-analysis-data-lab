@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Create Joined GeoPackage: Merge 1981 ED Boundaries with Indicator CSV
+Step 3a: Join 1981 ED Boundaries with Indicator CSV
+===================================================
 
 This script:
 1. Loads ED boundary shapefile
@@ -9,7 +10,7 @@ This script:
 4. Exports as GeoPackage with all joined attributes permanent
 
 Usage:
-    python scripts/create_joined_gpkg_1981.py
+    python scripts/08_join_boundaries_1981_eds.py
 
 Outputs:
     - data/processed/outputs/spatial/1981/manchester_eds_1981_joined_indicators.gpkg

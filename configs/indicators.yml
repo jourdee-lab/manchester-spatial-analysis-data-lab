@@ -463,39 +463,263 @@ years:
       type: rate
 
   2001:
-    # Placeholder structure for 2001 data
-    # Actual SAS codes to be populated after 2001 data ingestion
-    TOTAL_RES:
-      table: sas02
-      code: 01sas020001  # TBD
-      description: "All ages TOTAL Persons (Residents)"
+    # =====================================================
+    # 2001 Census Tables (Output Area level)
+    # =====================================================
+    # Geography unit : Output Area (OA), codes start with '00BN' for Manchester
+    # Table prefix   : CS0XX (topic tables) and CT003 (ethnic group)
+    # Cell reference : TableCode + 4-digit cell number
+    #                  e.g. CS001EW → CS0010001
+    #
+    # IMPORTANT CAVEAT on ethnic identification:
+    #   CT003EW  = primary ethnic self-identification (direct, prefer this)
+    #   CS015EW  = country of birth Asia proxy (INDIRECT – broad, includes
+    #              India, Pakistan, Bangladesh, etc.)
+    #   There is NO China-specific COB variable at OA level in 2001.
+    #   Do NOT use asia_born_pct as a direct Chinese-presence indicator;
+    #   it is provided only for longitudinal comparison context.
+
+    # =====================================================
+    # CS001EW: TOTAL POPULATION
+    # =====================================================
+    TOTAL_POP:
+      table: cs001ew
+      code: CS0010001
+      description: "All usual residents (total population)"
       type: denominator
-    
-    CHINESE_BORN:
-      table: sas04
-      code: 01sas040359  # TBD
-      description: "Total persons born in Far East"
+      note: "Base denominator for all population rates at OA level"
+
+    # =====================================================
+    # CT003EW: ETHNIC GROUP (PRIMARY for Chinese identification)
+    # =====================================================
+    CHINESE_ETHNIC:
+      table: ct003ew
+      code: CT0030016
+      description: "Persons of Chinese ethnic group (all persons, self-identified)"
       type: raw
-    
-    PCT_CHINESE_BORN:
-      table: sas04
-      code: 01sas040359  # TBD
-      description: "Far East-born as % of total population"
+      priority: PRIMARY
+      note: "Direct ethnic self-identification – preferred over COB proxy"
+
+    PCT_CHINESE_ETHNIC:
+      derived_from: ["CHINESE_ETHNIC", "TOTAL_POP"]
+      calculation: "100 * CHINESE_ETHNIC / TOTAL_POP"
+      description: "Chinese ethnic group as % of total population"
       type: rate
-      denominator: TOTAL_RES
-    
-    TOTAL_HH:
-      table: sas10
-      code: 01sas100929  # TBD
-      description: "Households with residents (TOTAL tenure)"
+      denominator: TOTAL_POP
+      note: "Key integration indicator: ethnic presence (2001 direct measure)"
+
+    # =====================================================
+    # CS015EW: COUNTRY OF BIRTH – ASIA PROXY
+    # ⚠ PROXY ONLY – not equivalent to China-born
+    # =====================================================
+    ASIA_BORN:
+      table: cs015ew
+      code: CS0150049
+      description: "Persons born in Asia (broad ONS region)"
+      type: raw
+      proxy_warning: true
+      note: >
+        PROXY ONLY. No China-specific COB variable exists at OA level in 2001.
+        CS0150049 covers all Asian countries of birth (India, Pakistan,
+        Bangladesh, China, Hong Kong, etc.). Use CT003 for Chinese-specific
+        identification. This field is retained for longitudinal comparison only.
+
+    PCT_ASIA_BORN:
+      derived_from: ["ASIA_BORN", "TOTAL_POP"]
+      calculation: "100 * ASIA_BORN / TOTAL_POP"
+      description: "Asia-born persons as % of total population (PROXY – see note)"
+      type: rate
+      denominator: TOTAL_POP
+      proxy_warning: true
+      note: >
+        BROAD PROXY for Chinese presence. Includes all Asian birth countries.
+        Do NOT treat as equivalent to China-born rate. Compare with 1991
+        CHINA_BORN only with explicit caveats. For ethnic presence, use
+        PCT_CHINESE_ETHNIC (CT003) instead.
+
+    # =====================================================
+    # CS028EW: ECONOMIC ACTIVITY (all persons 16-74)
+    # =====================================================
+    POP_16_74:
+      table: cs028ew
+      code: CS0280001
+      description: "All persons aged 16-74 (denominator for economic activity rates)"
       type: denominator
-    
-    PCT_NO_CAR:
-      table: sas10
-      code: 01sas100949  # TBD
-      description: "No-car households as % of total"
+      note: "Universe: all persons 16–74 (economically active + inactive)"
+
+    ECON_ACTIVE:
+      table: cs028ew
+      code: CS0280002
+      description: "Economically active (total, aged 16-74)"
+      type: raw
+
+    SELF_EMPLOYED:
+      table: cs028ew
+      code: CS0280004
+      description: "Self-employed (includes unpaid family workers, aged 16-74)"
+      type: raw
+
+    UNEMPLOYED:
+      table: cs028ew
+      code: CS0280005
+      description: "Unemployed (ILO definition, aged 16-74)"
+      type: raw
+
+    ECON_ACTIVE_RATE:
+      derived_from: ["ECON_ACTIVE", "POP_16_74"]
+      calculation: "100 * ECON_ACTIVE / POP_16_74"
+      description: "Economic activity rate (% of pop 16-74 economically active)"
       type: rate
-      denominator: TOTAL_HH
+      denominator: POP_16_74
+
+    UNEMPLOYMENT_RATE:
+      derived_from: ["UNEMPLOYED", "POP_16_74"]
+      calculation: "100 * UNEMPLOYED / POP_16_74"
+      description: "Unemployment rate (% of pop 16-74 that are unemployed, ILO)"
+      type: rate
+      denominator: POP_16_74
+
+    SELF_EMPLOYMENT_RATE:
+      derived_from: ["SELF_EMPLOYED", "POP_16_74"]
+      calculation: "100 * SELF_EMPLOYED / POP_16_74"
+      description: "Self-employment rate (% of pop 16-74 self-employed)"
+      type: rate
+      denominator: POP_16_74
+
+    # =====================================================
+    # CS049EW: TENURE
+    # =====================================================
+    TOTAL_HH_SPACES:
+      table: cs049ew
+      code: CS0490001
+      description: "Total household spaces (denominator for tenure rates)"
+      type: denominator
+
+    OWNER_OCC:
+      table: cs049ew
+      code: CS0490002
+      description: "Owner-occupied household spaces"
+      type: raw
+
+    COUNCIL_RENT:
+      table: cs049ew
+      code: CS0490003
+      description: "Rented from council / registered social landlord"
+      type: raw
+
+    PRIVATE_RENT:
+      table: cs049ew
+      code: CS0490005
+      description: "Privately rented household spaces"
+      type: raw
+
+    PCT_OWNER_OCC:
+      derived_from: ["OWNER_OCC", "TOTAL_HH_SPACES"]
+      calculation: "100 * OWNER_OCC / TOTAL_HH_SPACES"
+      description: "Owner-occupied rate (% of household spaces)"
+      type: rate
+      denominator: TOTAL_HH_SPACES
+
+    PCT_COUNCIL_RENT:
+      derived_from: ["COUNCIL_RENT", "TOTAL_HH_SPACES"]
+      calculation: "100 * COUNCIL_RENT / TOTAL_HH_SPACES"
+      description: "Council / RSL renting rate (% of household spaces)"
+      type: rate
+      denominator: TOTAL_HH_SPACES
+
+    PCT_PRIVATE_RENT:
+      derived_from: ["PRIVATE_RENT", "TOTAL_HH_SPACES"]
+      calculation: "100 * PRIVATE_RENT / TOTAL_HH_SPACES"
+      description: "Private renting rate (% of household spaces)"
+      type: rate
+      denominator: TOTAL_HH_SPACES
+
+    # =====================================================
+    # CS052EW: PERSONS PER ROOM (OVERCROWDING)
+    # =====================================================
+    ALL_HH_052:
+      table: cs052ew
+      code: CS0520001
+      description: "All household spaces (denominator for overcrowding rates)"
+      type: denominator
+
+    OVERCROWD_1_1P5:
+      table: cs052ew
+      code: CS0520013
+      description: "Household spaces with 1.0–1.5 persons per room"
+      type: raw
+      note: "Moderate overcrowding threshold"
+
+    OVERCROWD_GT1P5:
+      table: cs052ew
+      code: CS0520017
+      description: "Household spaces with >1.5 persons per room (severe)"
+      type: raw
+      note: "Severe overcrowding threshold"
+
+    PCT_OVERCROWD:
+      derived_from: ["OVERCROWD_1_1P5", "OVERCROWD_GT1P5", "ALL_HH_052"]
+      calculation: "100 * (OVERCROWD_1_1P5 + OVERCROWD_GT1P5) / ALL_HH_052"
+      description: "Combined overcrowding rate (≥1.0 ppr) as % of household spaces"
+      type: rate
+      denominator: ALL_HH_052
+      note: >
+        Combines moderate (1.0–1.5 ppr) and severe (>1.5 ppr) overcrowding.
+        Comparable to PCT_OVERCROWD_GT1P5 in 1991 (severe only) – use with care
+        when making cross-decade comparisons.
+
+    PCT_OVERCROWD_SEVERE:
+      derived_from: ["OVERCROWD_GT1P5", "ALL_HH_052"]
+      calculation: "100 * OVERCROWD_GT1P5 / ALL_HH_052"
+      description: "Severe overcrowding rate (>1.5 ppr) – for longitudinal comparison"
+      type: rate
+      denominator: ALL_HH_052
+
+    # =====================================================
+    # CS056EW: AMENITIES (bath / WC)
+    # =====================================================
+    ALL_HH_056:
+      table: cs056ew
+      code: CS0560001
+      description: "All household spaces (denominator for amenity deprivation rates)"
+      type: denominator
+
+    NO_BATH_WC:
+      table: cs056ew
+      code: CS0560021
+      description: "Lacks or shares use of bath/shower and toilet"
+      type: raw
+      note: "Housing quality indicator: basic amenity deprivation"
+
+    PCT_NO_BATH_WC:
+      derived_from: ["NO_BATH_WC", "ALL_HH_056"]
+      calculation: "100 * NO_BATH_WC / ALL_HH_056"
+      description: "Households lacking/sharing bath or WC as % of all spaces"
+      type: rate
+      denominator: ALL_HH_056
+
+    # =====================================================
+    # CS060EW: CAR OWNERSHIP
+    # =====================================================
+    ALL_HH_060:
+      table: cs060ew
+      code: CS0600001
+      description: "All household spaces (denominator for car ownership rates)"
+      type: denominator
+
+    NO_CAR:
+      table: cs060ew
+      code: CS0600005
+      description: "Household spaces with no car or van"
+      type: raw
+
+    PCT_NO_CAR:
+      derived_from: ["NO_CAR", "ALL_HH_060"]
+      calculation: "100 * NO_CAR / ALL_HH_060"
+      description: "No-car households as % of total household spaces"
+      type: rate
+      denominator: ALL_HH_060
+
 
 # =====================================================
 # METADATA & NOTES

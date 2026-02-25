@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Phase 6: Compute Small-Area Indicators (1981 ED-level)
-=======================================================
+Step 2a: Compute Indicators from ED-Level SAS Data (1981)
+=========================================================
 
-Converts raw SAS census counts into standardized indicators for each 
-Enumeration District (ED) in Manchester (1981).
+Updated to load real ED-level data (after raw SAS ingestion).
 
 Inputs:
-  - ED-level SAS data (CSV): gis_boundaries/1981_ed_manchester/manchester_ed_level_sas_template.csv
-  - Indicator configuration (YAML): configs/indicators.yml
+  - ED-level SAS data (CSV): data/processed/raw_ed_level/1981/sas0X_1981_ed_level.csv
+  - OR ED-level template (if raw data not yet available): gis_boundaries/1981_ed_manchester/manchester_ed_level_sas_template.csv
+  - Indicator configuration: configs/indicators.yml
 
 Outputs:
   - Indicator table (CSV): data/processed/indicators/1981/manchester_eds_1981_indicators.csv
@@ -40,7 +40,18 @@ logger = logging.getLogger(__name__)
 # =====================================================================
 
 CONFIG_PATH = Path("configs/indicators.yml")
-ED_DATA_PATH = Path("gis_boundaries/1981_ed_manchester/manchester_ed_level_sas_template.csv")
+
+# Try to load real ED-level data first; fall back to template if not available
+ED_LEVEL_PATHS = [
+    # Priority 1: Real ED-level data (from raw SAS ingestion)
+    Path("data/processed/raw_ed_level/1981/sas02_1981_ed_level.csv"),
+    Path("data/processed/raw_ed_level/1981/sas04_1981_ed_level.csv"),
+    Path("data/processed/raw_ed_level/1981/sas07_1981_ed_level.csv"),
+    Path("data/processed/raw_ed_level/1981/sas10_1981_ed_level.csv"),
+    # Priority 2: Template (zero-filled, for structure validation)
+    Path("gis_boundaries/1981_ed_manchester/manchester_ed_level_sas_template.csv"),
+]
+
 OUTPUT_CSV_PATH = Path("data/processed/indicators/1981/manchester_eds_1981_indicators.csv")
 OUTPUT_METADATA_PATH = Path("docs/phase6_indicator_documentation/indicators_1981_metadata.json")
 OUTPUT_SUMMARY_PATH = Path("docs/phase6_indicator_documentation/indicators_1981_summary.json")
@@ -60,12 +71,74 @@ def load_config(config_path: Path) -> Dict:
     logger.info(f"Loaded configuration for years: {list(config['years'].keys())}")
     return config
 
-def load_ed_data(data_path: Path) -> pd.DataFrame:
-    """Load ED-level SAS data from CSV."""
-    logger.info(f"Loading ED-level data from {data_path}")
-    df = pd.read_csv(data_path)
-    logger.info(f"Loaded {len(df)} EDs with {len(df.columns)} columns")
-    return df
+def load_ed_data(data_paths: List[Path]) -> Tuple[pd.DataFrame, str]:
+    """
+    Load ED-level SAS data from CSV.
+    
+    Tries multiple paths in order (real data first, template fallback).
+    If multiple files found (one per SAS table), merges them horizontally.
+    
+    Args:
+        data_paths: List of potential data file paths
+    
+    Returns:
+        Tuple of (DataFrame, data_source_description)
+    """
+    
+    logger.info("Loading ED-level SAS data...")
+    
+    # Filter to existing files
+    existing_files = [p for p in data_paths if p.exists()]
+    
+    if not existing_files:
+        logger.error(f"No ED-level data files found")
+        logger.error(f"Expected one of:")
+        for p in data_paths:
+            logger.error(f"  - {p}")
+        raise FileNotFoundError("No ED-level data files found")
+    
+    dfs = []
+    file_sources = []
+    
+    # Load all available files
+    for fpath in existing_files:
+        logger.info(f"  Loading: {fpath}")
+        df = pd.read_csv(fpath)
+        logger.info(f"    Shape: {df.shape} (rows, cols)")
+        dfs.append(df)
+        file_sources.append(fpath.name)
+        
+        # If this looks like real ED-level data (1017 rows), use it
+        if len(df) == 1017:
+            logger.info(f"    ✓ Real ED-level data (1,017 Manchester EDs)")
+            # Continue loading other files to merge
+        elif len(df) == 1:
+            logger.warning(f"    ⚠ Single-row aggregate data (Manchester LAD level)")
+    
+    # Merge all loaded files on zoneid
+    if len(dfs) > 1:
+        logger.info(f"\nMerging {len(dfs)} tables horizontally...")
+        merged = dfs[0]
+        for i, df in enumerate(dfs[1:], 2):
+            # Check if zoneid column exists in both
+            if 'zoneid' in merged.columns and 'zoneid' in df.columns:
+                # Merge on zoneid, dropping duplicate zoneid from df
+                merged = merged.merge(df.drop('zoneid', axis=1), 
+                                    left_index=True, right_index=True,
+                                    how='inner')
+                logger.info(f"  Merged table {i}: {merged.shape[1]} total columns")
+        df = merged
+        source = f"Merged from {len(file_sources)} tables"
+    elif len(dfs) == 1:
+        df = dfs[0]
+        source = file_sources[0]
+    else:
+        raise FileNotFoundError("No ED-level data files could be loaded")
+    
+    logger.info(f"\nLoaded {len(df)} EDs with {len(df.columns)} columns")
+    logger.info(f"Source: {source}")
+    
+    return df, source
 
 def compute_indicator(
     df: pd.DataFrame,
@@ -279,7 +352,7 @@ def save_outputs(
     summary: Dict,
     csv_path: Path,
     metadata_path: Path,
-    summary_path: Path
+    summary_path: Path,
 ):
     """Save indicator outputs to CSV and JSON."""
     
@@ -319,11 +392,12 @@ def main():
         logger.error(f"Configuration file not found: {CONFIG_PATH}")
         return False
     
-    # Load ED-level data
+    # Load ED-level data (real or template)
     try:
-        ed_data = load_ed_data(ED_DATA_PATH)
-    except FileNotFoundError:
-        logger.error(f"ED-level data file not found: {ED_DATA_PATH}")
+        ed_data, data_source = load_ed_data(ED_LEVEL_PATHS)
+        logger.info(f"Using data source: {data_source}")
+    except FileNotFoundError as e:
+        logger.error(f"{e}")
         return False
     
     # Compute indicators

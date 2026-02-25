@@ -62,6 +62,7 @@ def convert_gpkg_to_geojson(
     output_dir: Path,
     output_name: str = None,
     simplify_tolerance: float = 10,
+    post_simplify_degrees: float = None,
     coordinate_precision: int = 6,
     target_crs: str = "EPSG:4326"
 ) -> Path:
@@ -72,7 +73,11 @@ def convert_gpkg_to_geojson(
         input_gpkg: Path to input .gpkg file
         output_dir: Directory to save GeoJSON output
         output_name: Custom output filename (without extension)
-        simplify_tolerance: Geometry simplification tolerance
+        simplify_tolerance: Pre-reproject geometry simplification tolerance
+            (in the source CRS units, e.g. metres for BNG). Set to 0 to skip.
+        post_simplify_degrees: If set, apply a second simplification pass
+            *after* reprojection to WGS84, using this tolerance in degrees.
+            E.g. 0.0001 degrees ≈ 10 m at UK latitudes.
         coordinate_precision: Decimal places for coordinates
         target_crs: Target CRS for output (default WGS84 for web maps)
     
@@ -87,14 +92,20 @@ def convert_gpkg_to_geojson(
     print(f"  • Original CRS: {gdf.crs}")
     print(f"  • Columns: {list(gdf.columns)}")
     
+    # Pre-reproject simplification (source CRS units)
+    if simplify_tolerance and simplify_tolerance > 0:
+        gdf = simplify_geojson(gdf, tolerance=simplify_tolerance)
+        print(f"  • Simplified geometries (tolerance={simplify_tolerance} source units)")
+
     # Reproject to WGS84 (EPSG:4326) for web mapping
     if str(gdf.crs) != target_crs:
         gdf = gdf.to_crs(target_crs)
         print(f"  • Reprojected to {target_crs}")
-    
-    # Simplify geometries
-    gdf = simplify_geojson(gdf, tolerance=simplify_tolerance)
-    print(f"  • Simplified geometries (tolerance={simplify_tolerance}m)")
+
+    # Post-reproject simplification (degrees)
+    if post_simplify_degrees and post_simplify_degrees > 0:
+        gdf = simplify_geojson(gdf, tolerance=post_simplify_degrees)
+        print(f"  • Post-reproject simplification ({post_simplify_degrees}°)")
     
     # Convert to GeoJSON dictionary
     geojson_dict = json.loads(gdf.to_json())
@@ -137,13 +148,26 @@ def batch_convert_census_data():
         {
             "input": spatial_data_dir / "1981" / "manchester_eds_1981_joined_indicators.gpkg",
             "output_name": "manchester_eds_1981",
-            "description": "1981 Enumeration Districts with indicators"
+            "description": "1981 Enumeration Districts with indicators",
+            "simplify_tolerance": 10,
+            "post_simplify_degrees": None,
         },
         {
             "input": spatial_data_dir / "1991" / "manchester_eds_1991_joined_indicators.gpkg",
             "output_name": "manchester_eds_1991",
-            "description": "1991 Enumeration Districts with indicators"
-        }
+            "description": "1991 Enumeration Districts with indicators",
+            "simplify_tolerance": 10,
+            "post_simplify_degrees": None,
+        },
+        {
+            "input": spatial_data_dir / "2001" / "manchester_oas_2001_joined_indicators.gpkg",
+            "output_name": "manchester_oas_2001",
+            "description": "2001 Output Areas with indicators",
+            # Pre-reproject pass (BNG metres) skipped (set to 0);
+            # post-reproject pass at 0.0001° as specified for 2001.
+            "simplify_tolerance": 0,
+            "post_simplify_degrees": 0.0001,
+        },
     ]
     
     print("=" * 70)
@@ -164,7 +188,8 @@ def batch_convert_census_data():
                 input_gpkg=input_path,
                 output_dir=web_output_dir,
                 output_name=config["output_name"],
-                simplify_tolerance=10,  # 10m simplification for visual quality
+                simplify_tolerance=config.get("simplify_tolerance", 10),
+                post_simplify_degrees=config.get("post_simplify_degrees", None),
                 coordinate_precision=6  # ~10cm precision (good for web)
             )
             converted_files.append({
@@ -178,7 +203,7 @@ def batch_convert_census_data():
     # Create metadata file
     if converted_files:
         metadata = {
-            "generated": "2026-02-04",
+            "generated": "2026-02-25",
             "crs": "EPSG:4326 (WGS84)",
             "datasets": converted_files
         }
