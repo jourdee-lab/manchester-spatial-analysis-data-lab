@@ -1,0 +1,136 @@
+{
+  "produced_at": "2026-02-25T21:08:25.342690Z",
+  "anchor_geography": "2001 ward boundaries (england_caswa_2001_clipped.shp)",
+  "anchor_geography_code_prefix": "00BN",
+  "n_harmonised_zones": 33,
+  "crs": "EPSG:27700",
+  "years_included": [
+    1981,
+    1991,
+    2001
+  ],
+  "methods": {
+    "1981": {
+      "source_units": "1981 Enumeration Districts (1017 EDs)",
+      "method": "Areal interpolation via polygon overlay (gpd.overlay intersection)",
+      "extensive_vars": "area-weighted sum (count * fragment_area/ed_area)",
+      "intensive_vars": "re-derived from interpolated counts; fallback: area-weighted mean",
+      "uncertainty_threshold": "30% area gap"
+    },
+    "1991": {
+      "source_units": "1991 wards (33 wards, already at ward level)",
+      "method": "Direct code mapping only \u2014 1991 and 2001 ward boundaries are geographically identical (confirmed by comparing england_wa_1991.shp label codes with england_caswa_2001_clipped.shp label column). No spatial interpolation performed.",
+      "code_crosswalk": "2001_ward.ons_label \u2194 2001_ward.label (=1991 code)"
+    },
+    "2001": {
+      "source_units": "2001 Output Areas (1341 OAs)",
+      "method": "Direct aggregation using ward_code field already present in OA data",
+      "extensive_vars": "sum",
+      "intensive_vars": "population-weighted mean (weight = total_pop)"
+    }
+  },
+  "source_files": {
+    "1981_indicators": "data/processed/indicators/1981/manchester_eds_1981_indicators.csv (ED-level rows, code_len=8)",
+    "1991_indicators": "data/processed/indicators/1991/manchester_wards_1991_indicators.csv",
+    "2001_indicators": "data/processed/indicators/2001/manchester_oas_2001_indicators.csv",
+    "1981_boundaries": "gis_boundaries/1981/ED_1981_EW.shp",
+    "1991_boundaries": "gis_boundaries/1991/england_wa_1991.shp",
+    "2001_ward_boundaries": "gis_boundaries/2001/wards/england_caswa_2001_clipped.shp"
+  },
+  "variable_classification": {
+    "1981_extensive": [
+      "TOTAL_RES_1981",
+      "CHINESE_BORN_1981",
+      "CHINESE_BORN_MALE_1981",
+      "CHINESE_BORN_FEMALE_1981",
+      "ALL_EMPLOYED_1981",
+      "TOTAL_HH_1981",
+      "OWNER_OCC_HH_1981",
+      "SOCIAL_RENT_HH_1981",
+      "NO_CAR_HH_1981",
+      "OVERCROWD_GT1P5_1981",
+      "OVERCROWD_1TO1P5_1981",
+      "NO_BATH_OR_WC_1981",
+      "NO_INSIDE_BATH_OR_WC_1981"
+    ],
+    "1981_intensive": [
+      "PCT_MALE_1981",
+      "PCT_FEMALE_1981",
+      "PCT_CHINESE_BORN_1981",
+      "EMP_RATE_1981",
+      "PCT_OWNER_OCC_1981",
+      "PCT_SOCIAL_RENT_1981",
+      "PCT_NO_CAR_1981",
+      "CAR_OWNERSHIP_INDEX_1981",
+      "PCT_OVERCROWD_GT1P5_1981",
+      "PCT_OVERCROWD_1TO1P5_1981",
+      "PCT_NO_BATH_OR_WC_1981",
+      "PCT_NO_INSIDE_BATH_OR_WC_1981"
+    ],
+    "1991_extensive": [
+      "TOTAL_RES_1991",
+      "TOTAL_MALE_1991",
+      "TOTAL_FEMALE_1991",
+      "CHINESE_ETHNIC_1991",
+      "CHINESE_ETHNIC_MALE_1991",
+      "CHINESE_ETHNIC_FEMALE_1991",
+      "CHINESE_AGE_0_4_1991",
+      "CHINESE_AGE_5_15_1991",
+      "CHINESE_AGE_16_29_1991",
+      "CHINESE_AGE_30_PENSION_1991",
+      "CHINESE_PENSIONABLE_1991",
+      "CHINESE_LIMITING_ILLNESS_1991",
+      "CHINA_BORN_1991",
+      "CHINA_BORN_MALE_1991",
+      "CHINA_BORN_FEMALE_1991",
+      "CHINESE_16PLUS_1991",
+      "CHINESE_ECON_ACTIVE_1991",
+      "CHINESE_UNEMPLOYED_1991",
+      "CHINESE_HOUSEHOLDS_1991",
+      "CHINESE_OVERCROWD_GT1P5_1991",
+      "CHINESE_OWNER_OCC_1991"
+    ],
+    "1991_intensive": [
+      "PCT_MALE_1991",
+      "PCT_FEMALE_1991",
+      "PCT_CHINESE_ETHNIC_1991",
+      "PCT_CHINA_BORN_1991",
+      "CHINESE_EMP_RATE_1991",
+      "CHINESE_UNEMP_RATE_1991",
+      "PCT_CHINESE_OVERCROWD_1991",
+      "PCT_CHINESE_OWNER_OCC_1991"
+    ],
+    "2001_extensive": [
+      "total_pop",
+      "chinese_ethnic_count",
+      "asia_born_count",
+      "pop_16_74",
+      "total_hh_spaces"
+    ],
+    "2001_intensive": [
+      "chinese_ethnic_pct",
+      "asia_born_pct",
+      "econ_active_rate",
+      "unemployment_rate",
+      "self_employment_rate",
+      "owner_occ_rate",
+      "council_rent_rate",
+      "private_rent_rate",
+      "overcrowd_rate",
+      "overcrowd_severe_rate",
+      "no_bath_wc_rate",
+      "no_car_rate"
+    ]
+  },
+  "uncertainty_summary": {
+    "n_high_uncertainty_zones": 0,
+    "high_uncertainty_zones": [],
+    "note": "HIGH = total ED coverage < 70% of 2001 ward area; may indicate areas with boundary misalignment or data gaps at ED level"
+  },
+  "assumptions": [
+    "Population is uniformly distributed within 1981 ED polygons (no sub-ED population surface available for 1981)",
+    "1991 and 2001 ward boundaries are treated as geographically identical based on matching polygon labels in the 2001 ward boundary file",
+    "2001 OA ward_code field accurately assigns each OA to its parent 2001 ward",
+    "Rates/percentages for 1981 are re-derived from area-interpolated counts to avoid compounding interpolation error"
+  ]
+}
