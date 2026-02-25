@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create 1991 Manchester Wards Joined GeoPackage for QGIS Mapping
+Step 3b: Join 1991 Manchester Ward Boundaries with Indicator CSV
 ================================================================
 
 This script creates a spatial dataset joining 1991 Manchester ward indicators

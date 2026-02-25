@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Phase 7: Compute ED-Level Indicators for 1991 Manchester
-=========================================================
+Step 2b: Compute ED-Level Indicators for 1991 Manchester
+========================================================
 
 Processes 1991 census data at Enumeration District (ED) level and creates
 a spatial dataset for QGIS mapping.

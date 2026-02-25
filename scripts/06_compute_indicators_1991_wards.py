@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Phase 7: Compute Indicators for 1991 Manchester Wards
-======================================================
+Step 2c: Compute Indicators for 1991 Manchester Wards
+=====================================================
 
 Implements Option B (Ward-Level Mapping) for 1991 census data.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Ingest Raw SAS ED-Level Data (1991)
-===================================
+Step 1b: Ingest Raw SAS ED-Level Data (1991)
+============================================
 
 Loads 4-part raw CSV files for each SAS table (s02, s06, s07, s20) and:
 1. Concatenates the parts horizontally (wide format)
@@ -358,7 +358,8 @@ def main():
         logger.info(f"  Output directory: {OUTPUT_DIR}")
         logger.info(f"\nNext step:")
         logger.info(f"  1. Update Phase 6 config to use: {OUTPUT_DIR}")
-        logger.info(f"  2. Run: python scripts/phase6_compute_indicators_1991.py")
+        logger.info(f"  2. Run: python scripts/05_compute_indicators_1991_eds.py  (ED-level) OR")
+        logger.info(f"          python scripts/06_compute_indicators_1991_wards.py (ward-level)")
         return True
     else:
         logger.error("✗ Some tables failed to ingest")
