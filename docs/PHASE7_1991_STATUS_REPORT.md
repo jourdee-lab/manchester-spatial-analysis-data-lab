@@ -11,8 +11,8 @@
 Phase 7 successfully replicates the 1981 workflow for 1991 data at **ED level** (906 Manchester EDs) with additional ward-level aggregation.
 
 ### Completed ✓
-1. ✅ Created `phase7_compute_indicators_1991_ed.py` script (ED-level)
-2. ✅ Created `phase7_compute_indicators_1991_ward.py` script (ward-level)
+1. ✅ Created `05_compute_indicators_1991_eds.py` script (ED-level)
+2. ✅ Created `06_compute_indicators_1991_wards.py` script (ward-level)
 3. ✅ Loaded all 1991 SAS tables (S02, S06, S07, S09, S49)
 4. ✅ Computed 26 ED-level indicators including Chinese ethnic identification
 5. ✅ Joined to 1991 ED boundaries (100% match rate - 906/906)
@@ -174,8 +174,8 @@ data/raw/
 ### Immediate (This Week)
 1. **Obtain missing 1991 SAS tables** from UK Data Service
 2. Place raw files in correct directories
-3. Re-run `ingest_raw_sas_ed_level_1991.py` to process raw data
-4. Re-run `phase7_compute_indicators_1991_district.py` for full indicators
+3. Re-run `02_ingest_1991_eds.py` to process raw data
+4. Re-run `06_compute_indicators_1991_wards.py` for full indicators
 
 ### After Data Obtained
 1. Validate 1991 indicators against published statistics
@@ -196,10 +196,10 @@ Once data is obtained:
 
 ```bash
 # Step 1: Process raw 1991 SAS files
-python scripts/ingest_raw_sas_ed_level_1991.py
+python scripts/02_ingest_1991_eds.py
 
-# Step 2: Compute 1991 indicators (district level)
-python scripts/phase7_compute_indicators_1991_district.py
+# Step 2: Compute 1991 indicators (ward level)
+python scripts/06_compute_indicators_1991_wards.py
 
 # Step 3: Review outputs
 cat data/processed/indicators/1991/manchester_district_1991_indicators.csv
@@ -210,7 +210,7 @@ cat data/processed/indicators/temporal/manchester_1981_1991_comparison.csv
 
 ## Files Created This Session
 
-1. `scripts/phase7_compute_indicators_1991_district.py` - Main computation script
+1. `scripts/06_compute_indicators_1991_wards.py` - Main computation script
 2. `data/processed/indicators/1991/manchester_district_1991_indicators.csv` - 1991 indicators (partial)
 3. `data/processed/indicators/temporal/manchester_1981_1991_comparison.csv` - Comparison dataset
 4. `data/processed/indicators/temporal/temporal_comparison_metadata.json` - Methodology metadata

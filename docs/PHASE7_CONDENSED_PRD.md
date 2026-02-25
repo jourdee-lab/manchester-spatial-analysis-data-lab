@@ -108,8 +108,8 @@ fyp_main/
 ├── qgis/
 │   └── phase6_indicator_mapping_1981.qgz
 ├── scripts/
-│   ├── ingest_raw_sas_ed_level_1981.py (560 lines)
-│   ├── phase6_compute_indicators_1981_ed_level.py (550 lines)
+│   ├── 01_ingest_1981_eds.py
+│   ├── 04_compute_indicators_1981_eds.py
 │   └── web_integration/        # 🆕 Conversion scripts
 └── src/                        # 🆕 Web application
     ├── components/map/
