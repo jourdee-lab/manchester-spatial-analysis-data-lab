@@ -1,9 +1,8 @@
-# Manchester Spatial Analysis FYP (Work In Progress)
+# Manchester Spatial Analysis: Final Year Project
 
-**Status:** Phase 6 Complete | ED-Level Indicators Computed  
-**Last Updated:** 2026-01-14  
+**Last updated:** 26 February 2026
 
-A reproducible geospatial data engineering pipeline for analyzing the spatial evolution and economic integration of Chinese immigrant communities in Manchester across three census periods (1981, 1991, 2001).
+A geospatial data engineering pipeline for analysing the spatial evolution and economic integration of Chinese immigrant communities in Manchester across three census periods (1981, 1991, 2001).
 
 ---
 
@@ -11,7 +10,7 @@ A reproducible geospatial data engineering pipeline for analyzing the spatial ev
 
 1. [Overview](#overview)
 2. [Repository Structure](#repository-structure)
-3. [Quick Start](#quick-start)
+3. [Installation and Reproduction](#installation-and-reproduction)
 4. [Data Pipeline](#data-pipeline)
 5. [Key Files & Documentation](#key-files--documentation)
 6. [Phase Status](#phase-status)
@@ -33,18 +32,14 @@ A reproducible geospatial data engineering pipeline for analyzing the spatial ev
 
 ### Data Sources
 
-- **UK Census Small Area Statistics (SAS)** — 1981, 1991, 2001
+- **UK Census Small Area Statistics (SAS)** (1981, 1991, 2001)
   - SAS02 (demographics), SAS04 (country of birth), SAS07 (employment), SAS10 (housing)
-- **Digital Boundary Data** — Enumeration Districts (1981), Output Areas (2001)
+- **Digital Boundary Data** (Enumeration Districts 1981, Output Areas 2001)
 - **UK Data Service / EDINA**
 
-### Key Features
+### Technical Specification
 
-**Configuration-driven pipeline** (YAML-based, no hardcoding)  
-**ED-level analysis** (1,053 Manchester Enumeration Districts)  
-**25 computed indicators** (ethnicity, housing, employment, tenure)  
-**QGIS integration** (join validation, mapping templates)  
-**Reproducible workflows** (documented procedures, validation scripts)
+The pipeline is configured via YAML files and operates at Enumeration District level across 1,053 Manchester EDs. It computes 25 indicators spanning ethnicity, housing, employment, and tenure. QGIS is used for spatial join validation and choropleth mapping. All workflow steps are documented with accompanying validation scripts to support independent reproduction.
 
 ---
 
@@ -148,7 +143,7 @@ FYP_Data_Pipeline/
 
 ---
 
-## Quick Start
+## Installation and Reproduction
 
 ### Prerequisites
 
@@ -160,14 +155,14 @@ python3 --version
 pip install pandas pyyaml geopandas
 ```
 
-### 1. Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/jourdee-lab/FYP_Data_Pipeline.git
 cd FYP_Data_Pipeline
 ```
 
-### 2. Set Up Environment
+### 2. Set Up the Environment
 
 ```bash
 # Create virtual environment
@@ -178,7 +173,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt  # (if available)
 ```
 
-### 3. Run the Full Pipeline
+### 3. Run the Pipeline
 
 ```bash
 # Steps 1–3: Ingest, compute indicators, and spatially join for each decade
@@ -200,7 +195,7 @@ python scripts/12_aggregate_2001_oas_to_wards.py
 python scripts/13_export_web_geojson.py
 ```
 
-### 4. View Results
+### 4. Inspect Outputs
 
 ```bash
 # Check indicator output
@@ -214,32 +209,32 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 ## Data Pipeline
 
-### Phase 1–4: Data Preparation (Complete ✓)
+### Phase 1–4: Data Preparation (Complete)
 
 - Aggregate city-level SAS tables (SAS02, SAS04, SAS07, SAS10)
 - Create Manchester filter logic (`zoneid.startswith("03BN")`)
 - Define indicator formulas and denominators
 
-### Phase 5: QGIS Join Validation (Complete ✓)
+### Phase 5: QGIS Join Validation (Complete)
 
 - **Goal:** Validate join between ED boundaries and census data
 - **Result:** 100% match rate (1,017 EDs)
-- **Outputs:** 
+- **Outputs:**
   - `qgis/phase5_join_validation_1981_eds.qgz`
   - `docs/join_log_1981_ed_qgis.md`
 
-### Phase 6: Indicator Construction (Complete ✓)
+### Phase 6: Indicator Construction (Complete)
 
 - **Goal:** Compute ED-level indicators for mapping
 - **Process:**
-  1. Ingest 20 raw SAS CSV files → 4 ED-level CSVs (1,053 EDs)
+  1. Ingest 20 raw SAS CSV files into 4 ED-level CSVs (1,053 EDs)
   2. Compute 25 indicators (demographics, ethnicity, housing, employment)
   3. Export indicator table for QGIS mapping
 - **Outputs:**
   - `data/processed/indicators/1981/manchester_eds_1981_indicators.csv`
   - `docs/phase6_indicator_documentation/` (metadata, summaries)
 
-### Phase 7: Mapping & Analysis (In Progress)
+### Phase 7: Mapping & Analysis (Complete)
 
 - Create QGIS choropleths
 - Statistical analysis (correlation, clustering)
@@ -260,20 +255,20 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 | Script | Purpose | Status |
 |--------|---------|--------|
-| `01_ingest_1981_eds.py` | Ingest 1981 raw CSVs → ED-level data | ✓ Active |
-| `02_ingest_1991_eds.py` | Ingest 1991 raw CSVs → ED-level data | ✓ Active |
-| `03_ingest_2001_oas.py` | Ingest 2001 raw CSVs → OA-level data | ✓ Active |
-| `04_compute_indicators_1981_eds.py` | Compute 25 indicators (1981 EDs) | ✓ Active |
-| `05_compute_indicators_1991_eds.py` | Compute indicators (1991 EDs) | ✓ Active |
-| `06_compute_indicators_1991_wards.py` | Compute indicators (1991 wards) | ✓ Active |
-| `07_compute_indicators_2001_oas.py` | Compute indicators (2001 OAs) | ✓ Active |
-| `08_join_boundaries_1981_eds.py` | Spatial join: 1981 EDs | ✓ Active |
-| `09_join_boundaries_1991_wards.py` | Spatial join: 1991 wards | ✓ Active |
-| `10_join_boundaries_2001_oas.py` | Spatial join: 2001 OAs | ✓ Active |
-| `11_harmonise_ward_boundaries.py` | Harmonise ward boundaries across decades | ✓ Active |
-| `12_aggregate_2001_oas_to_wards.py` | Aggregate 2001 OAs → ward-level | ✓ Active |
-| `13_export_web_geojson.py` | Export GeoJSON for web app | ✓ Active |
-| `utils_convert_gpkg_to_geojson.py` | Utility: GeoPackage → GeoJSON | ✓ Active |
+| `01_ingest_1981_eds.py` | Ingest 1981 raw CSVs into ED-level data | Active |
+| `02_ingest_1991_eds.py` | Ingest 1991 raw CSVs into ED-level data | Active |
+| `03_ingest_2001_oas.py` | Ingest 2001 raw CSVs into OA-level data | Active |
+| `04_compute_indicators_1981_eds.py` | Compute 25 indicators (1981 EDs) | Active |
+| `05_compute_indicators_1991_eds.py` | Compute indicators (1991 EDs) | Active |
+| `06_compute_indicators_1991_wards.py` | Compute indicators (1991 wards) | Active |
+| `07_compute_indicators_2001_oas.py` | Compute indicators (2001 OAs) | Active |
+| `08_join_boundaries_1981_eds.py` | Spatial join: 1981 EDs | Active |
+| `09_join_boundaries_1991_wards.py` | Spatial join: 1991 wards | Active |
+| `10_join_boundaries_2001_oas.py` | Spatial join: 2001 OAs | Active |
+| `11_harmonise_ward_boundaries.py` | Harmonise ward boundaries across decades | Active |
+| `12_aggregate_2001_oas_to_wards.py` | Aggregate 2001 OAs to ward level | Active |
+| `13_export_web_geojson.py` | Export GeoJSON for the web application | Active |
+| `utils_convert_gpkg_to_geojson.py` | Utility: GeoPackage to GeoJSON conversion | Active |
 
 ### Documentation (Key)
 
@@ -290,10 +285,10 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 | Phase | Description | Status | Output |
 |-------|-------------|--------|--------|
-| **1–4** | Aggregate data + configuration | ✓ Complete | City-level profiles |
-| **5** | QGIS join validation | ✓ Complete | 100% match rate, QGIS project |
-| **6** | ED-level indicator computation | ✓ Complete | 1,053 EDs × 25 indicators |
-| **7** | Mapping & visualization | In Progress | QGIS choropleths |
+| **1–4** | Aggregate data + configuration | Complete | City-level profiles |
+| **5** | QGIS join validation | Complete | 100% match rate, QGIS project |
+| **6** | ED-level indicator computation | Complete | 1,053 EDs × 25 indicators |
+| **7** | Mapping & visualisation | In progress | QGIS choropleths |
 | **8** | Longitudinal analysis (1991/2001) | Planned | Trend analysis |
 
 ---
@@ -318,37 +313,37 @@ cat data/processed/indicators/1981/indicators_summary.txt
 ### 25 Computed Indicators (1981)
 
 #### Demographics (SAS02)
-- `TOTAL_RES_1981` — Total residents (count)
-- `PCT_MALE_1981` — % male residents
-- `PCT_FEMALE_1981` — % female residents
+- `TOTAL_RES_1981`: Total residents (count)
+- `PCT_MALE_1981`: % male residents
+- `PCT_FEMALE_1981`: % female residents
 
 #### Ethnicity/Birthplace (SAS04)
-- `CHINESE_BORN_1981` — Far East-born residents (count)
-- `PCT_CHINESE_BORN_1981` — % Far East-born of total residents
+- `CHINESE_BORN_1981`: Far East-born residents (count)
+- `PCT_CHINESE_BORN_1981`: % Far East-born of total residents
 
 #### Housing Quality (SAS10)
-- `TOTAL_HH_1981` — Total households (denominator)
-- `NO_CAR_HH_1981` — Households with no car (count)
-- `PCT_NO_CAR_1981` — % households with no car
-- `OVERCROWD_GT1P5_1981` — Overcrowded households >1.5 pp/room (count)
-- `PCT_OVERCROWD_GT1P5_1981` — % overcrowded households
-- `NO_BATH_OR_WC_HH_1981` — Households lacking bath or WC (count)
-- `PCT_NO_BATH_OR_WC_1981` — % lacking bath/WC
-- `NO_INSIDE_BATH_OR_WC_1981` — Households with no inside bath/WC (count)
-- `PCT_NO_INSIDE_BATH_WC_1981` — % no inside bath/WC
+- `TOTAL_HH_1981`: Total households (denominator)
+- `NO_CAR_HH_1981`: Households with no car (count)
+- `PCT_NO_CAR_1981`: % households with no car
+- `OVERCROWD_GT1P5_1981`: Overcrowded households >1.5 pp/room (count)
+- `PCT_OVERCROWD_GT1P5_1981`: % overcrowded households
+- `NO_BATH_OR_WC_HH_1981`: Households lacking bath or WC (count)
+- `PCT_NO_BATH_OR_WC_1981`: % lacking bath/WC
+- `NO_INSIDE_BATH_OR_WC_1981`: Households with no inside bath/WC (count)
+- `PCT_NO_INSIDE_BATH_WC_1981`: % no inside bath/WC
 
 #### Tenure (SAS10)
-- `OWNER_OCC_HH_1981` — Owner-occupied households (count)
-- `PCT_OWNER_OCC_1981` — % owner-occupied
-- `SOCIAL_RENT_HH_1981` — Social rented households (count)
-- `PCT_SOCIAL_RENT_1981` — % social rented
+- `OWNER_OCC_HH_1981`: Owner-occupied households (count)
+- `PCT_OWNER_OCC_1981`: % owner-occupied
+- `SOCIAL_RENT_HH_1981`: Social rented households (count)
+- `PCT_SOCIAL_RENT_1981`: % social rented
 
 #### Employment (SAS07)
-- `RES_16PLUS_1981` — Residents aged 16+ (count)
-- `EMPLOYED_1981` — Employed residents (count)
-- `UNEMPLOYED_1981` — Unemployed residents (count)
-- `EMP_RATE_1981` — Employment rate (%)
-- `UNEMP_RATE_1981` — Unemployment rate (%)
+- `RES_16PLUS_1981`: Residents aged 16+ (count)
+- `EMPLOYED_1981`: Employed residents (count)
+- `UNEMPLOYED_1981`: Unemployed residents (count)
+- `EMP_RATE_1981`: Employment rate (%)
+- `UNEMP_RATE_1981`: Unemployment rate (%)
 
 ### Key SAS Codes (1981)
 
@@ -431,17 +426,17 @@ python scripts/13_export_web_geojson.py
 
 ## Development
 
-### Repository Cleanup (Staging Branch)
+### Repository Organisation
 
-This `staging` branch includes repository cleanup following the "Repository Janitor" protocol:
+The `repo-cleanup-2026-02-26` branch consolidates documentation and removes redundant files from earlier development stages:
 
-**Deleted Files:**
-- Redundant Python scripts (superseded versions)
-- Obsolete aggregate CSVs (city-level summaries)
-- Duplicate documentation files
+**Removed files:**
+- Python scripts superseded by later versions
+- Obsolete city-level aggregate CSVs
+- Duplicate documentation fragments
 - Python cache directories
 
-**Consolidated Documentation:**
+**Consolidated documentation:**
 - Phase 5: `PHASES_5_MASTER.md` (merged from 2 files)
 - Phase 6: Content integrated into `PHASE_6_MASTER.md`
 
@@ -488,13 +483,9 @@ Academic research project. Census data sourced from UK Data Service under End Us
 
 ---
 
-## Questions?
+## Support
 
-For issues or questions:
-- Open a GitHub issue
-- Consult `docs/phase6_indicator_documentation/masterguide.md` for detailed workflow
-- Check `docs/phase6_indicator_documentation/` for troubleshooting
-
----
-**Status:** Phase 6 Complete, Phase 7 In Progress  
-**Last Updated:** 2026-01-14
+For queries regarding the pipeline or data:
+- Open a GitHub issue in this repository
+- Consult `docs/phase6_indicator_documentation/masterguide.md` for detailed workflow documentation
+- Review `docs/phase6_indicator_documentation/` for troubleshooting guidance
