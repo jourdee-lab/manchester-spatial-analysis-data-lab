@@ -1,6 +1,6 @@
 # Manchester Spatial Analysis: Final Year Project
 
-**Last updated:** 26 February 2026
+**Last updated:** 7 March 2026
 
 A geospatial data engineering pipeline for analysing the spatial evolution and economic integration of Chinese immigrant communities in Manchester across three census periods (1981, 1991, 2001).
 
@@ -13,12 +13,11 @@ A geospatial data engineering pipeline for analysing the spatial evolution and e
 3. [Installation and Reproduction](#installation-and-reproduction)
 4. [Data Pipeline](#data-pipeline)
 5. [Key Files & Documentation](#key-files--documentation)
-6. [Phase Status](#phase-status)
-7. [Geography & Codes](#geography--codes)
-8. [Data Dictionary](#data-dictionary)
-9. [Usage Examples](#usage-examples)
-10. [Development](#development)
-11. [References](#references)
+6. [Geography & Codes](#geography--codes)
+7. [Data Dictionary](#data-dictionary)
+8. [Usage Examples](#usage-examples)
+9. [Development](#development)
+10. [References](#references)
 
 ---
 
@@ -26,118 +25,158 @@ A geospatial data engineering pipeline for analysing the spatial evolution and e
 
 ### Research Questions
 
-1. How did the spatial distribution of Chinese immigrants in Manchester change from 1981 to 2001?
-2. What were the trends in housing quality, tenure, and economic indicators across census periods?
-3. Did areas with higher Chinese-born populations show distinct integration trajectories?
+1. How did the spatial distribution of Chinese-born residents in Manchester shift between 1981 and 2001?
+2. What changes occurred in housing tenure, housing quality, and employment rates in wards with higher concentrations of Chinese-born residents?
+3. Do the trajectories observed at ward and enumeration district level support or complicate existing accounts of suburban dispersal and socioeconomic integration among minority ethnic communities in post-industrial British cities?
+
+### Key Findings
+
+| Metric | Value |
+|--------|-------|
+| Population growth | ~2,400 Far East-born (1981) → 5,100+ self-identified Chinese (2001), 0.55% → 1.31% of city |
+| Index of Dissimilarity | 0.43 (1981) → 0.28 (1991) → 0.32 (2001): moderate and declining segregation |
+| Mean ward owner-occupation | +7.3 percentage points across the period |
+| Mean ward severe overcrowding | −0.36 percentage points across the period |
+| Integration trajectory | Asymmetric convergence: settled family households converged on citywide norms; growing student and transient population depressed aggregate indicators |
+| Self-employment | Negatively correlated with Chinese concentration (r = −0.30), consistent with a geographically dispersed catering economy rather than an enclave |
+| Peak concentration wards (2001) | Central (6.06%), Ardwick (5.84%), Hulme (3.58%) |
 
 ### Data Sources
 
-- **UK Census Small Area Statistics (SAS)** (1981, 1991, 2001)
-  - SAS02 (demographics), SAS04 (country of birth), SAS07 (employment), SAS10 (housing)
-- **Digital Boundary Data** (Enumeration Districts 1981, Output Areas 2001)
-- **UK Data Service / EDINA**
+- **UK Census Small Area Statistics (SAS)** — sourced via UK Data Service / EDINA
+  - **1981:** SAS02 (demographics), SAS04 (country of birth), SAS07 (employment), SAS10 (housing) — 5-part split CSVs
+  - **1991:** S02 (demographics), S06 (ethnic group), S07 (country of birth), S09 (economic position), S16/S20 (tenure/amenities), S81 (communal establishments) — 4-part split CSVs
+  - **2001:** CS001EW (population), CT003EW (ethnicity), CS015EW (country of birth), CS028EW (economic activity), CS049EW (tenure), CS052EW (overcrowding), CS056EW (amenities), CS060EW (car ownership) — ONS dissemination CSVs
+- **Digital Boundary Shapefiles** — UK Data Service / EDINA
+  - 1981: Enumeration District boundaries (`ED_1981_EW.shp`)
+  - 1991: Electoral ward boundaries (`england_wa_1991.shp`)
+  - 2001: Output Area boundaries (`england_oa_2001.shp`) + ward boundaries (`england_caswa_2001_clipped.shp`)
 
 ### Technical Specification
 
-The pipeline is configured via YAML files and operates at Enumeration District level across 1,053 Manchester EDs. It computes 25 indicators spanning ethnicity, housing, employment, and tenure. QGIS is used for spatial join validation and choropleth mapping. All workflow steps are documented with accompanying validation scripts to support independent reproduction.
+The pipeline is configured via YAML files and operates at Enumeration District level across 1,053 Manchester EDs (1981), electoral wards (1991), and Output Areas (2001), harmonised to 33 common ward geographies. It computes 29 indicators spanning ethnicity, housing tenure and quality, employment, and economic position. QGIS is used for spatial join validation and choropleth mapping. All workflow steps are documented with accompanying validation scripts to support independent reproduction.
 
 ---
 
 ## Repository Structure
 
 ```
-FYP_Data_Pipeline/
-├── .github/
-│   └── instructions/               # Project phase specifications (PRDs)
-│       ├── fyp_phase_5.instructions.md
-│       ├── fyp_phase_6.instructions.md
-│       └── Repository clean.instructions.md
+fyp_main/
+│
+├── claude.md                       # AI workflow instructions
+├── README.md                       # This file
 │
 ├── configs/
 │   ├── indicators.yml              # 29 indicator definitions (1981/1991/2001)
 │   └── sas_raw_file_mapping.yml    # Raw SAS file structure documentation
 │
 ├── data/
-│   ├── raw/                        # Raw census CSVs (.gitignored)
-│   │   └── census_1981/            # 20 SAS CSV files (5 parts × 4 tables)
-│   │       ├── 81sas02ews/SAS02_1981_part{1-5}.csv
-│   │       ├── 81sas04ews/SAS04_1981_part{1-5}.csv
-│   │       ├── 81sas07ews/SAS07_1981_part{1-5}.csv
-│   │       └── 81sas10ews/SAS10_1981_part{1-5}.csv
+│   ├── raw/                        # Raw census CSVs (.gitignored — obtain from UK Data Service)
+│   │   ├── sas/                    # 1981: 20 CSV parts (5 parts × 4 tables)
+│   │   │   ├── 1981_sas02_part{1-5}.csv   # Demographics
+│   │   │   ├── 1981_sas04_part{1-5}.csv   # Country of birth
+│   │   │   ├── 1981_sas07_part{1-5}.csv   # Employment
+│   │   │   └── 1981_sas10_part{1-5}.csv   # Housing & tenure
+│   │   ├── s02ews/s02ews{1-4}.csv  # 1991: Demographics
+│   │   ├── s06ews/s06ews{1-4}.csv  # 1991: Ethnic group
+│   │   ├── s07ews/s07ews{1-4}.csv  # 1991: Country of birth
+│   │   ├── s09ews/s09ews{1-4}.csv  # 1991: Economic position
+│   │   ├── s16ew+s/s16ew{1-4}.csv  # 1991: Tenure & amenities
+│   │   ├── s81ews/s81ews{1-4}.csv  # 1991: Communal establishments
+│   │   ├── c01cs001_ons.csv        # 2001: CS001EW – Total population
+│   │   ├── c01ct003_ons.csv        # 2001: CT003EW – Ethnic group (incl. Chinese)
+│   │   ├── c01cs015_ons.csv        # 2001: CS015EW – Country of birth
+│   │   ├── c01cs028_ons.csv        # 2001: CS028EW – Economic activity
+│   │   ├── c01cs049_ons.csv        # 2001: CS049EW – Tenure
+│   │   ├── c01cs052_ons.csv        # 2001: CS052EW – Persons per room
+│   │   ├── c01cs056_ons.csv        # 2001: CS056EW – Amenities (bath/WC)
+│   │   └── c01cs060_ons.csv        # 2001: CS060EW – Car ownership
 │   │
 │   ├── processed/
-│   │   ├── raw_ed_level/           # ED-level census data (Phase 6 input)
-│   │   │   └── census_1981/
-│   │   │       ├── sas02_1981_ed_level.csv    # 1,053 EDs × demographics
-│   │   │       ├── sas04_1981_ed_level.csv    # 1,053 EDs × country of birth
-│   │   │       ├── sas07_1981_ed_level.csv    # 1,053 EDs × employment
-│   │   │       └── sas10_1981_ed_level.csv    # 1,053 EDs × housing
-│   │   │
-│   │   ├── indicators/             # Computed indicators (Phase 6 output)
-│   │   │   └── 1981/
-│   │   │       └── manchester_eds_1981_indicators.csv  # 1,053 EDs × 25 indicators
-│   │   │
-│   │   └── outputs/spatial/        # Spatial data products
-│   │       └── 1981/
-│   │           └── manchester_eds_1981_joined_attributes.csv
+│   │   ├── 1991_sas_code_verification.csv          # 1991 SAS code cross-check
+│   │   ├── aggregates/             # Pre-combined reference totals (validation)
+│   │   │   ├── census_1981/README.md
+│   │   │   ├── census_1991/1991_sas02_totalpop_combined.csv
+│   │   │   └── census_2001/
+│   │   │       ├── 2001_oas_combined_raw.csv
+│   │   │       └── README.md
+│   │   ├── indicators/             # Computed indicators per decade
+│   │   │   ├── 1981/
+│   │   │   │   ├── indicators_summary.txt
+│   │   │   │   ├── manchester_eds_1981_indicators.csv        # Ward-level aggregations
+│   │   │   │   └── manchester_eds_1981_indicators_ed_level.csv  # Raw ED-level indicators
+│   │   │   ├── 1991/
+│   │   │   │   ├── manchester_district_1991_indicators.csv   # District totals
+│   │   │   │   ├── manchester_eds_1991_indicators.csv        # ED-level indicators
+│   │   │   │   └── manchester_wards_1991_indicators.csv      # Ward-level aggregations
+│   │   │   ├── 2001/
+│   │   │   │   └── manchester_oas_2001_indicators.csv
+│   │   │   └── temporal/           # Cross-decade comparison outputs
+│   │   │       ├── harmonisation_metadata.json
+│   │   │       ├── harmonised_zones.geojson
+│   │   │       ├── manchester_1981_1991_comparison.csv
+│   │   │       ├── manchester_1981_1991_2001_comparison.csv
+│   │   │       ├── manchester_harmonised_indicators_1981_1991_2001.csv
+│   │   │       └── temporal_comparison_metadata.json
+│   │   └── outputs/spatial/        # GeoPackage spatial products
+│   │       ├── 1981/
+│   │       │   ├── manchester_eds_1981_joined_attributes.csv
+│   │       │   └── manchester_eds_1981_joined_indicators.gpkg
+│   │       ├── 1991/
+│   │       │   ├── manchester_eds_1991_joined_indicators.gpkg
+│   │       │   └── manchester_wards_1991_indicators_for_qgis.csv
+│   │       └── 2001/
+│   │           └── manchester_oas_2001_joined_indicators.gpkg
 │   │
 │   └── lookups/                    # Reference/lookup tables
-│       ├── 1981_geography_lookup.csv          # ED code → geography mapping
-│       ├── 1981_variable_lookup.csv           # SAS code → variable label
-│       ├── 1981_table_code_name_lookup.csv    # Table definitions
-│       └── 1991_table_code_name_lookup.csv
+│       ├── 1981_geography_lookup.csv
+│       ├── 1981_variable_lookup.csv
+│       ├── 1981_table_code_name_lookup.csv
+│       ├── 1991_census_structure.md
+│       ├── 1991_england_wales_scotland_geography_lookup.csv
+│       ├── 1991_England_Wales_Scotland_Small_Area_Statistics_variable_lookup.csv
+│       ├── 1991_table_code_name_lookup.csv
+│       ├── 2001_geography_lookup_england.csv   # OA → ward mapping
+│       ├── 2001_variable_lookup_ew.csv
+│       └── 2001_table_code_and_names_ukcas_map.csv
 │
 ├── docs/
-│   ├── archived/                   # Session logs and historical docs
-│   │   └── SESSION_SUMMARY_2026_01_14.md
-│   │
-│   ├── phase6_indicator_documentation/
-│   │   ├── PHASE_6_IMPLEMENTATION_REPORT.md
-│   │   ├── PHASE_6_README.md
-│   │   ├── indicators_1981_metadata.json
-│   │   |── indicators_1981_summary.json
-│   │   └── master_guide.md
-│   │
-│   ├── ingest_raw_sas_ed_level.md
-│   ├── join_log_1981_ed_qgis.md
-│   ├── join_validation_statistics.json
-│   └── join_validation_summary.md
+│   └── full_technical.md                   # Full technical reference
 │
 ├── figures/
-│   └── phase6_choropleth_maps/     # QGIS-generated maps (placeholder)
+│   └── choropleth_maps/            # QGIS-generated choropleth map exports
+│       ├── 1981/
+│       │   ├── 1981_chinese_born_choropleth.png
+│       │   └── 1981_chinese_born_choropleth.pgw
+│       ├── 1991/
+│       │   ├── 1991_chinese_ethnic_ed_choropleth.png
+│       │   └── 1991_chinese_ethnic_ed_choropleth.pgw
+│       └── 2001/
+│           └── manchester_oas_2001_joined_choropleth_maps.qgz
 │
-├── gis_boundaries/                 # Boundary shapefiles
-│   └── 1981_ed_manchester/
-│       ├── ED_1981_EW.shp          # 1,017 Manchester EDs (national dataset)
-│       └── manchester_ed_level_sas_template.csv  # Phase 5 join template
-│
-├── notebooks/
-│   ├── build_pipeline.ipynb        # Pipeline development/testing
-│   └── merging.ipynb               # Data merging experiments
+├── gis_boundaries/                 # Boundary shapefiles (.gitignored — obtain from UK Data Service)
+│   ├── 1981/                       # ED_1981_EW.shp — National ED boundaries (England & Wales)
+│   ├── 1991/                       # england_wa_1991.shp — Electoral ward boundaries
+│   └── 2001/
+│       ├── OA/                     # england_oa_2001.shp — Output Area boundaries
+│       └── wards/                  # england_caswa_2001_clipped.shp — Ward boundaries
 │
 ├── qgis/
-│   ├── phase5_join_validation_1981_eds.qgz      # Phase 5 QGIS project
-│   └── phase6_indicator_mapping_1981.qgz        # Phase 6 mapping template
+│   └── 1981/
+│       ├── join_validation.qgz     # Join QA — 100% match rate (1,017 EDs)
+│       └── indicator_mapping.qgz   # Indicator choropleth template
 │
 ├── scripts/
-│   ├── 01_ingest_1981_eds.py                    # Step 1a: Raw data ingestion (1981 EDs)
-│   ├── 02_ingest_1991_eds.py                    # Step 1b: Raw data ingestion (1991 EDs)
-│   ├── 03_ingest_2001_oas.py                    # Step 1c: Raw data ingestion (2001 OAs)
-│   ├── 04_compute_indicators_1981_eds.py        # Step 2a: Compute indicators (1981 EDs)
-│   ├── 05_compute_indicators_1991_eds.py        # Step 2b: Compute indicators (1991 EDs)
-│   ├── 06_compute_indicators_1991_wards.py      # Step 2c: Compute indicators (1991 wards)
-│   ├── 07_compute_indicators_2001_oas.py        # Step 2d: Compute indicators (2001 OAs)
-│   ├── 08_join_boundaries_1981_eds.py           # Step 3a: Spatial join (1981)
-│   ├── 09_join_boundaries_1991_wards.py         # Step 3b: Spatial join (1991)
-│   ├── 10_join_boundaries_2001_oas.py           # Step 3c: Spatial join (2001)
-│   ├── 11_harmonise_ward_boundaries.py          # Step 4: Harmonise ward boundaries
-│   ├── 12_aggregate_2001_oas_to_wards.py        # Step 5: Aggregate 2001 OAs → wards
-│   ├── 13_export_web_geojson.py                 # Step 6: Export GeoJSON for web app
-│   └── utils_convert_gpkg_to_geojson.py        # Utility: Convert GeoPackage → GeoJSON
+│   ├── utils.py                    # Shared helpers (safe_rate, weighted_mean, dissimilarity_index)
+│   ├── 01_ingest.py                # Step 1: Raw data ingestion (1981, 1991, 2001)
+│   ├── 02_compute_indicators_1981.py  # Step 2a: Compute indicators (1981 EDs)
+│   ├── 03_compute_indicators_1991.py  # Step 2b: Compute indicators (1991 EDs + wards)
+│   ├── 04_compute_indicators_2001.py  # Step 2c: Compute indicators (2001 OAs)
+│   ├── 05_join_boundaries.py          # Step 3: Spatial join (1981, 1991, 2001)
+│   ├── 06_harmonise_and_export.py     # Step 4: Harmonise ward boundaries + export GeoJSON
+│   └── 07_analysis.py                 # Step 5: Dissertation analysis (RQ1–RQ5)
 │
-├── master_guide.md                 # Project master guide
-├── initial_prd.md                  # Initial project requirements
-└── README.md                       # This file
+└── .venv/                          # Python virtual environment (gitignored)
 
 ```
 
@@ -176,23 +215,22 @@ pip install -r requirements.txt  # (if available)
 ### 3. Run the Pipeline
 
 ```bash
-# Steps 1–3: Ingest, compute indicators, and spatially join for each decade
-python scripts/01_ingest_1981_eds.py
-python scripts/04_compute_indicators_1981_eds.py
-python scripts/08_join_boundaries_1981_eds.py
+# Step 1: Ingest all three census years
+python scripts/01_ingest.py
 
-python scripts/02_ingest_1991_eds.py
-python scripts/06_compute_indicators_1991_wards.py
-python scripts/09_join_boundaries_1991_wards.py
+# Step 2: Compute indicators
+python scripts/02_compute_indicators_1981.py
+python scripts/03_compute_indicators_1991.py
+python scripts/04_compute_indicators_2001.py
 
-python scripts/03_ingest_2001_oas.py
-python scripts/07_compute_indicators_2001_oas.py
-python scripts/10_join_boundaries_2001_oas.py
+# Step 3: Spatial joins
+python scripts/05_join_boundaries.py
 
-# Step 4–6: Harmonise, aggregate, export
-python scripts/11_harmonise_ward_boundaries.py
-python scripts/12_aggregate_2001_oas_to_wards.py
-python scripts/13_export_web_geojson.py
+# Step 4: Harmonise ward boundaries and export web GeoJSON
+python scripts/06_harmonise_and_export.py
+
+# Step 5: Run dissertation analysis
+python scripts/07_analysis.py
 ```
 
 ### 4. Inspect Outputs
@@ -220,19 +258,21 @@ cat data/processed/indicators/1981/indicators_summary.txt
 - **Goal:** Validate join between ED boundaries and census data
 - **Result:** 100% match rate (1,017 EDs)
 - **Outputs:**
-  - `qgis/phase5_join_validation_1981_eds.qgz`
-  - `docs/join_log_1981_ed_qgis.md`
+  - `qgis/1981/join_validation.qgz`
 
 ### Phase 6: Indicator Construction (Complete)
 
-- **Goal:** Compute ED-level indicators for mapping
+- **Goal:** Compute indicators at ED, ward, and OA level across all three census years
 - **Process:**
-  1. Ingest 20 raw SAS CSV files into 4 ED-level CSVs (1,053 EDs)
-  2. Compute 25 indicators (demographics, ethnicity, housing, employment)
-  3. Export indicator table for QGIS mapping
+  1. Ingest raw SAS CSV files into zone-level data frames
+  2. Compute 29 indicators (demographics, ethnicity, housing, employment)
+  3. Export per-decade indicator tables and an ED-level detail table
 - **Outputs:**
   - `data/processed/indicators/1981/manchester_eds_1981_indicators.csv`
-  - `docs/phase6_indicator_documentation/` (metadata, summaries)
+  - `data/processed/indicators/1981/manchester_eds_1981_indicators_ed_level.csv`
+  - `data/processed/indicators/1991/manchester_wards_1991_indicators.csv`
+  - `data/processed/indicators/2001/manchester_oas_2001_indicators.csv`
+  - `data/processed/indicators/temporal/` (harmonised cross-decade comparison files)
 
 ### Phase 7: Mapping & Analysis (Complete)
 
@@ -251,47 +291,26 @@ cat data/processed/indicators/1981/indicators_summary.txt
 | `configs/indicators.yml` | 29 indicator definitions with SAS code mappings |
 | `configs/sas_raw_file_mapping.yml` | Raw file structure documentation |
 
-### Scripts (Production)
+### Scripts
 
-| Script | Purpose | Status |
-|--------|---------|--------|
-| `01_ingest_1981_eds.py` | Ingest 1981 raw CSVs into ED-level data | Active |
-| `02_ingest_1991_eds.py` | Ingest 1991 raw CSVs into ED-level data | Active |
-| `03_ingest_2001_oas.py` | Ingest 2001 raw CSVs into OA-level data | Active |
-| `04_compute_indicators_1981_eds.py` | Compute 25 indicators (1981 EDs) | Active |
-| `05_compute_indicators_1991_eds.py` | Compute indicators (1991 EDs) | Active |
-| `06_compute_indicators_1991_wards.py` | Compute indicators (1991 wards) | Active |
-| `07_compute_indicators_2001_oas.py` | Compute indicators (2001 OAs) | Active |
-| `08_join_boundaries_1981_eds.py` | Spatial join: 1981 EDs | Active |
-| `09_join_boundaries_1991_wards.py` | Spatial join: 1991 wards | Active |
-| `10_join_boundaries_2001_oas.py` | Spatial join: 2001 OAs | Active |
-| `11_harmonise_ward_boundaries.py` | Harmonise ward boundaries across decades | Active |
-| `12_aggregate_2001_oas_to_wards.py` | Aggregate 2001 OAs to ward level | Active |
-| `13_export_web_geojson.py` | Export GeoJSON for the web application | Active |
-| `utils_convert_gpkg_to_geojson.py` | Utility: GeoPackage to GeoJSON conversion | Active |
+| Script | Purpose |
+|--------|--------|
+| `utils.py` | Shared helpers: `safe_rate`, `weighted_mean`, `dissimilarity_index`, `save_gpkg` |
+| `01_ingest.py` | Raw data ingestion for all three census years |
+| `02_compute_indicators_1981.py` | YAML-driven indicator computation (1981 EDs) |
+| `03_compute_indicators_1991.py` | Indicator computation at ED and ward level (1991) |
+| `04_compute_indicators_2001.py` | Indicator computation (2001 OAs) |
+| `05_join_boundaries.py` | Spatial join of indicators to boundaries (1981, 1991, 2001) |
+| `06_harmonise_and_export.py` | Areal interpolation harmonisation + web GeoJSON export |
+| `07_analysis.py` | Dissertation analysis: RQ1–RQ5, dissimilarity index, temporal change |
 
-### Documentation (Key)
+### Documentation
 
 | Document | Purpose |
-|----------|---------|
-| `PHASE_6_MASTER.md` | Complete Phase 6 guide (consolidated) |
-| `PHASES_5_MASTER.md` | Complete Phase 5 guide (join validation) |
-| `docs/join_log_1981_ed_qgis.md` | Phase 5 audit trail |
-| `docs/phase6_indicator_documentation/PHASE_6_IMPLEMENTATION_REPORT.md` | Phase 6 technical report |
-
----
-
-## Phase Status
-
-| Phase | Description | Status | Output |
-|-------|-------------|--------|--------|
-| **1–4** | Aggregate data + configuration | Complete | City-level profiles |
-| **5** | QGIS join validation | Complete | 100% match rate, QGIS project |
-| **6** | ED-level indicator computation | Complete | 1,053 EDs × 25 indicators |
-| **7** | Mapping & visualisation | In progress | QGIS choropleths |
-| **8** | Longitudinal analysis (1991/2001) | Planned | Trend analysis |
-
----
+|----------|--------|
+| `docs/full_technical.md` | Full technical reference for the pipeline and web app |
+| `configs/indicators.yml` | Canonical indicator definitions with SAS code mappings |
+| `data/lookups/1991_census_structure.md` | 1991 SAS table structure reference |
 
 ## Geography & Codes
 
@@ -305,6 +324,90 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 - Example: `03BNFA01`, `03BNFA02`, ..., `03BNZZ99`
 - Structure: `03BN` (LAD) + `FA` (ward/area) + `01` (ED number)
+
+---
+
+## Census Raw Data Inventory
+
+All raw files are stored in `data/raw/` and excluded from version control (`.gitignore`). They must be obtained from the [UK Data Service](https://census.ukdataservice.ac.uk/) before running the pipeline.
+
+### 1981 — Small Area Statistics (SAS)
+
+Geography: Enumeration Districts (EDs). Manchester LAD prefix: `03BN`.
+
+| Raw files | Table | Topic | Parts | Expected cols |
+|-----------|-------|-------|-------|---------------|
+| `1981_sas02_part{1-5}.csv` | SAS02 | Demographics – Total population by age/sex | 5 | 161 |
+| `1981_sas04_part{1-5}.csv` | SAS04 | Country of birth (birthplace) | 5 | 61 |
+| `1981_sas07_part{1-5}.csv` | SAS07 | Employment & economic activity | 5 | 28 |
+| `1981_sas10_part{1-5}.csv` | SAS10 | Housing & tenure | 5 | 221 |
+
+> Each file is a horizontal slice of the full national table. Parts are concatenated on `zoneid` and filtered to `03BN` by `01_ingest.py`.
+
+#### 1981 Boundary & Lookup Files
+
+| File | Purpose | Used by |
+|------|---------|--------|
+| `gis_boundaries/1981/ED_1981_EW.shp` | National ED polygons | `05_join_boundaries.py`, `06_harmonise_and_export.py` |
+| `data/lookups/1981_geography_lookup.csv` | ED code → geography name | Reference |
+| `data/lookups/1981_variable_lookup.csv` | SAS code → variable label | Reference |
+| `data/lookups/1981_table_code_name_lookup.csv` | Table code → description | Reference |
+
+---
+
+### 1991 — Small Area Statistics (SAS)
+
+Geography: Enumeration Districts (EDs) aggregated to electoral wards. Manchester prefix: `03BN`.
+
+| Raw files | Table | Topic | Parts | Expected cols |
+|-----------|-------|-------|-------|---------------|
+| `s02ews/s02ews{1-4}.csv` | S02EWS | Demographics – age & marital status | 4 | ~155 |
+| `s06ews/s06ews{1-4}.csv` | S06EWS | Ethnic group | 4 | ~12 |
+| `s07ews/s07ews{1-4}.csv` | S07EWS | Country of birth | 4 | ~61 |
+| `s09ews/s09ews{1-4}.csv` | S09EWS | Economic position | 4 | ~52 |
+| `s16ew+s/s16ew{1-4}.csv` | S16EW+S | Tenure & amenities | 4 | ~227 |
+| `s81ews/s81ews{1-4}.csv` | S81EWS | Communal establishments | 4 | ~28 |
+
+> Variable columns use the `sXXXXXX` naming convention (e.g. `s020001`) rather than the 1981-style `81sasXXXXXX` prefix.
+
+#### 1991 Boundary & Lookup Files
+
+| File | Purpose | Used by |
+|------|---------|--------|
+| `gis_boundaries/1991/england_wa_1991.shp` | Electoral ward polygons | `06_harmonise_and_export.py` |
+| `gis_boundaries/1991/1991_wards_ew.shp` | Ward polygons (alternative) | `05_join_boundaries.py` |
+| `data/lookups/1991_england_wales_scotland_geography_lookup.csv` | Zone code → geography | Reference |
+| `data/lookups/1991_England_Wales_Scotland_Small_Area_Statistics_variable_lookup.csv` | Variable labels | Reference |
+| `data/lookups/1991_table_code_name_lookup.csv` | Table code → description | Reference |
+
+---
+
+### 2001 — Census Area Statistics (CAS)
+
+Geography: Output Areas (OAs), aggregated to wards. Manchester prefix: `00BN`. OA codes are exactly 10 characters (e.g. `00BNFA0001`).
+
+| Raw file | Table | Topic |
+|----------|-------|-------|
+| `c01cs001_ons.csv` | CS001EW | Total population |
+| `c01ct003_ons.csv` | CT003EW | Ethnic group (incl. Chinese/Chinese British) |
+| `c01cs015_ons.csv` | CS015EW | Country of birth – Asia proxy |
+| `c01cs028_ons.csv` | CS028EW | Economic activity (ages 16–74) |
+| `c01cs049_ons.csv` | CS049EW | Tenure |
+| `c01cs052_ons.csv` | CS052EW | Persons per room (overcrowding) |
+| `c01cs056_ons.csv` | CS056EW | Amenities (bath/WC) |
+| `c01cs060_ons.csv` | CS060EW | Car or van ownership |
+
+> Files are in long format (`zoneid | variable | value`). `01_ingest.py` pivots to wide, filters to `00BN`, and merges all tables into `2001_oas_combined_raw.csv`.
+
+#### 2001 Boundary & Lookup Files
+
+| File | Purpose | Used by |
+|------|---------|--------|
+| `gis_boundaries/2001/OA/england_oa_2001.shp` | Output Area polygons | `05_join_boundaries.py` |
+| `gis_boundaries/2001/wards/england_caswa_2001_clipped.shp` | Ward polygons (harmonisation anchor) | `06_harmonise_and_export.py` |
+| `data/lookups/2001_geography_lookup_england.csv` | OA → ward code mapping | `06_harmonise_and_export.py` |
+| `data/lookups/2001_variable_lookup_ew.csv` | Variable labels | Reference |
+| `data/lookups/2001_table_code_and_names_ukcas_map.csv` | Table code → description | Reference |
 
 ---
 
@@ -385,7 +488,7 @@ print(high_chinese[['zoneid', 'PCT_CHINESE_BORN_1981', 'PCT_OWNER_OCC_1981']])
 import geopandas as gpd
 
 # Load boundaries
-boundaries = gpd.read_file('gis_boundaries/1981_ed_manchester/ED_1981_EW.shp')
+boundaries = gpd.read_file('gis_boundaries/1981/ED_1981_EW.shp')
 boundaries = boundaries[boundaries['ED81CD'].str.startswith('03BN')]
 
 # Load indicators
@@ -403,42 +506,16 @@ joined.to_file('outputs/manchester_1981_indicators.gpkg', driver='GPKG')
 ```bash
 source .venv/bin/activate
 
-# Ingest, compute, and join for each decade
-python scripts/01_ingest_1981_eds.py
-python scripts/04_compute_indicators_1981_eds.py
-python scripts/08_join_boundaries_1981_eds.py
-
-python scripts/02_ingest_1991_eds.py
-python scripts/06_compute_indicators_1991_wards.py
-python scripts/09_join_boundaries_1991_wards.py
-
-python scripts/03_ingest_2001_oas.py
-python scripts/07_compute_indicators_2001_oas.py
-python scripts/10_join_boundaries_2001_oas.py
-
-# Harmonise, aggregate, and export
-python scripts/11_harmonise_ward_boundaries.py
-python scripts/12_aggregate_2001_oas_to_wards.py
-python scripts/13_export_web_geojson.py
+python scripts/01_ingest.py
+python scripts/02_compute_indicators_1981.py
+python scripts/03_compute_indicators_1991.py
+python scripts/04_compute_indicators_2001.py
+python scripts/05_join_boundaries.py
+python scripts/06_harmonise_and_export.py
+python scripts/07_analysis.py
 ```
 
 ---
-
-## Development
-
-### Repository Organisation
-
-The `repo-cleanup-2026-02-26` branch consolidates documentation and removes redundant files from earlier development stages:
-
-**Removed files:**
-- Python scripts superseded by later versions
-- Obsolete city-level aggregate CSVs
-- Duplicate documentation fragments
-- Python cache directories
-
-**Consolidated documentation:**
-- Phase 5: `PHASES_5_MASTER.md` (merged from 2 files)
-- Phase 6: Content integrated into `PHASE_6_MASTER.md`
 
 ### Testing
 
@@ -453,19 +530,30 @@ python scripts/validate_join_manual.py
 ### Adding or Extending Data
 
 1. Update `configs/indicators.yml` with new SAS codes if needed
-2. All three decades are already ingested via `01_`–`03_ingest_*.py`
-3. Rerun the relevant `04_`–`07_compute_indicators_*.py` script
-4. Regenerate the harmonised output: `11_harmonise_ward_boundaries.py`
-5. Re-export for the web app: `13_export_web_geojson.py`
+2. Re-ingest if raw data changes: `python scripts/01_ingest.py`
+3. Rerun the relevant compute script (`02_`, `03_`, or `04_compute_indicators_*.py`)
+4. Regenerate harmonised output and web GeoJSON: `python scripts/06_harmonise_and_export.py`
 
 ---
 
 ## References
 
-- **UK Data Service Census Support:** [https://census.ukdataservice.ac.uk/](https://census.ukdataservice.ac.uk/)
-- **Casweb:** Online census data extraction
-- **SAS Documentation:** UK Data Service variable lookups
+### Academic Sources
+
+- Benton, G. and Gomez, E.T. (2008). *The Chinese in Britain, 1800–Present: Economy, Transnationalism, Identity*. Basingstoke: Palgrave Macmillan.
+- Massey, D.S. and Denton, N.A. (1988). 'The dimensions of residential segregation', *Social Forces*, 67(2), pp. 281–315.
+- Parker, D. (1998). 'Rethinking British Chinese identities', in T. Skelton and G. Valentine (eds) *Cool Places: Geographies of Youth Cultures*. London: Routledge, pp. 66–82.
+- Peach, C. (1996). 'Does Britain have ghettos?', *Transactions of the Institute of British Geographers*, 21(1), pp. 216–235.
+- Simpson, L. (2004). 'Statistics of racial segregation: measures, evidence and policy', *Urban Studies*, 41(3), pp. 661–681.
+
+### Data & Technical Sources
+
+- **Digital Artifact:** [https://mappingfyp.vercel.app](https://mappingfyp.vercel.app)
+- **UK Data Service Census Archive:** [https://census.ukdataservice.ac.uk/](https://census.ukdataservice.ac.uk/)
+- **EDINA Census Geography:** [https://edina.ac.uk/census/](https://edina.ac.uk/census/)
 - **QGIS:** [https://qgis.org/](https://qgis.org/)
+- **GeoPandas Documentation:** [https://geopandas.org/](https://geopandas.org/)
+- **Pandas Documentation:** [https://pandas.pydata.org/docs/](https://pandas.pydata.org/docs/)
 
 ---
 
@@ -487,5 +575,4 @@ Academic research project. Census data sourced from UK Data Service under End Us
 
 For queries regarding the pipeline or data:
 - Open a GitHub issue in this repository
-- Consult `docs/phase6_indicator_documentation/masterguide.md` for detailed workflow documentation
-- Review `docs/phase6_indicator_documentation/` for troubleshooting guidance
+- Consult `docs/full_technical.md` for full technical reference
