@@ -135,20 +135,7 @@ FYP_Data_Pipeline/
 │       └── 2001_table_code_and_names_ukcas_map.csv
 │
 ├── docs/
-│   ├── archived/                   # Session logs and historical docs
-│   │   └── SESSION_SUMMARY_2026_01_14.md
-│   │
-│   ├── phase6_indicator_documentation/
-│   │   ├── PHASE_6_IMPLEMENTATION_REPORT.md
-│   │   ├── PHASE_6_README.md
-│   │   ├── indicators_1981_metadata.json
-│   │   |── indicators_1981_summary.json
-│   │   └── master_guide.md
-│   │
-│   ├── ingest_raw_sas_ed_level.md
-│   ├── join_log_1981_ed_qgis.md
-│   ├── join_validation_statistics.json
-│   └── join_validation_summary.md
+│   └── full_technical.md                   # Full technical reference
 │
 ├── figures/
 │   └── phase6_choropleth_maps/     # QGIS-generated maps (placeholder)
@@ -162,33 +149,29 @@ FYP_Data_Pipeline/
 │       ├── OA/england_oa_2001.shp             # Output Area boundaries (England)
 │       └── wards/england_caswa_2001_clipped.shp  # Ward boundaries (harmonisation anchor)
 │
-├── notebooks/
-│   ├── build_pipeline.ipynb        # Pipeline development/testing
-│   └── merging.ipynb               # Data merging experiments
+├── gis_boundaries/                 # Boundary shapefiles (.gitignored — obtain from UK Data Service)
+│   ├── 1981/                       # ED_1981_EW.shp — National ED boundaries (England & Wales)
+│   ├── 1991/                       # england_wa_1991.shp — Electoral ward boundaries
+│   └── 2001/
+│       ├── OA/                     # england_oa_2001.shp — Output Area boundaries
+│       └── wards/                  # england_caswa_2001_clipped.shp — Ward boundaries
 │
 ├── qgis/
-│   ├── phase5_join_validation_1981_eds.qgz      # Phase 5 QGIS project
-│   └── phase6_indicator_mapping_1981.qgz        # Phase 6 mapping template
+│   └── 1981/
+│       ├── join_validation.qgz     # Join QA — 100% match rate (1,017 EDs)
+│       └── indicator_mapping.qgz   # Indicator choropleth template
 │
 ├── scripts/
-│   ├── 01_ingest_1981_eds.py                    # Step 1a: Raw data ingestion (1981 EDs)
-│   ├── 02_ingest_1991_eds.py                    # Step 1b: Raw data ingestion (1991 EDs)
-│   ├── 03_ingest_2001_oas.py                    # Step 1c: Raw data ingestion (2001 OAs)
-│   ├── 04_compute_indicators_1981_eds.py        # Step 2a: Compute indicators (1981 EDs)
-│   ├── 05_compute_indicators_1991_eds.py        # Step 2b: Compute indicators (1991 EDs)
-│   ├── 06_compute_indicators_1991_wards.py      # Step 2c: Compute indicators (1991 wards)
-│   ├── 07_compute_indicators_2001_oas.py        # Step 2d: Compute indicators (2001 OAs)
-│   ├── 08_join_boundaries_1981_eds.py           # Step 3a: Spatial join (1981)
-│   ├── 09_join_boundaries_1991_wards.py         # Step 3b: Spatial join (1991)
-│   ├── 10_join_boundaries_2001_oas.py           # Step 3c: Spatial join (2001)
-│   ├── 11_harmonise_ward_boundaries.py          # Step 4: Harmonise ward boundaries
-│   ├── 12_aggregate_2001_oas_to_wards.py        # Step 5: Aggregate 2001 OAs → wards
-│   ├── 13_export_web_geojson.py                 # Step 6: Export GeoJSON for web app
-│   └── utils_convert_gpkg_to_geojson.py        # Utility: Convert GeoPackage → GeoJSON
+│   ├── utils.py                    # Shared helpers (safe_rate, weighted_mean, dissimilarity_index)
+│   ├── 01_ingest.py                # Step 1: Raw data ingestion (1981, 1991, 2001)
+│   ├── 02_compute_indicators_1981.py  # Step 2a: Compute indicators (1981 EDs)
+│   ├── 03_compute_indicators_1991.py  # Step 2b: Compute indicators (1991 EDs + wards)
+│   ├── 04_compute_indicators_2001.py  # Step 2c: Compute indicators (2001 OAs)
+│   ├── 05_join_boundaries.py          # Step 3: Spatial join (1981, 1991, 2001)
+│   ├── 06_harmonise_and_export.py     # Step 4: Harmonise ward boundaries + export GeoJSON
+│   └── 07_analysis.py                 # Step 5: Dissertation analysis (RQ1–RQ5)
 │
-├── master_guide.md                 # Project master guide
-├── initial_prd.md                  # Initial project requirements
-└── README.md                       # This file
+└── .venv/                          # Python virtual environment (gitignored)
 
 ```
 
@@ -227,23 +210,22 @@ pip install -r requirements.txt  # (if available)
 ### 3. Run the Pipeline
 
 ```bash
-# Steps 1–3: Ingest, compute indicators, and spatially join for each decade
-python scripts/01_ingest_1981_eds.py
-python scripts/04_compute_indicators_1981_eds.py
-python scripts/08_join_boundaries_1981_eds.py
+# Step 1: Ingest all three census years
+python scripts/01_ingest.py
 
-python scripts/02_ingest_1991_eds.py
-python scripts/06_compute_indicators_1991_wards.py
-python scripts/09_join_boundaries_1991_wards.py
+# Step 2: Compute indicators
+python scripts/02_compute_indicators_1981.py
+python scripts/03_compute_indicators_1991.py
+python scripts/04_compute_indicators_2001.py
 
-python scripts/03_ingest_2001_oas.py
-python scripts/07_compute_indicators_2001_oas.py
-python scripts/10_join_boundaries_2001_oas.py
+# Step 3: Spatial joins
+python scripts/05_join_boundaries.py
 
-# Step 4–6: Harmonise, aggregate, export
-python scripts/11_harmonise_ward_boundaries.py
-python scripts/12_aggregate_2001_oas_to_wards.py
-python scripts/13_export_web_geojson.py
+# Step 4: Harmonise ward boundaries and export web GeoJSON
+python scripts/06_harmonise_and_export.py
+
+# Step 5: Run dissertation analysis
+python scripts/07_analysis.py
 ```
 
 ### 4. Inspect Outputs
@@ -271,19 +253,21 @@ cat data/processed/indicators/1981/indicators_summary.txt
 - **Goal:** Validate join between ED boundaries and census data
 - **Result:** 100% match rate (1,017 EDs)
 - **Outputs:**
-  - `qgis/phase5_join_validation_1981_eds.qgz`
-  - `docs/join_log_1981_ed_qgis.md`
+  - `qgis/1981/join_validation.qgz`
 
 ### Phase 6: Indicator Construction (Complete)
 
-- **Goal:** Compute ED-level indicators for mapping
+- **Goal:** Compute indicators at ED, ward, and OA level across all three census years
 - **Process:**
-  1. Ingest 20 raw SAS CSV files into 4 ED-level CSVs (1,053 EDs)
-  2. Compute 25 indicators (demographics, ethnicity, housing, employment)
-  3. Export indicator table for QGIS mapping
+  1. Ingest raw SAS CSV files into zone-level data frames
+  2. Compute 29 indicators (demographics, ethnicity, housing, employment)
+  3. Export per-decade indicator tables and an ED-level detail table
 - **Outputs:**
   - `data/processed/indicators/1981/manchester_eds_1981_indicators.csv`
-  - `docs/phase6_indicator_documentation/` (metadata, summaries)
+  - `data/processed/indicators/1981/manchester_eds_1981_indicators_ed_level.csv`
+  - `data/processed/indicators/1991/manchester_wards_1991_indicators.csv`
+  - `data/processed/indicators/2001/manchester_oas_2001_indicators.csv`
+  - `data/processed/indicators/temporal/` (harmonised cross-decade comparison files)
 
 ### Phase 7: Mapping & Analysis (Complete)
 
@@ -506,7 +490,7 @@ print(high_chinese[['zoneid', 'PCT_CHINESE_BORN_1981', 'PCT_OWNER_OCC_1981']])
 import geopandas as gpd
 
 # Load boundaries
-boundaries = gpd.read_file('gis_boundaries/1981_ed_manchester/ED_1981_EW.shp')
+boundaries = gpd.read_file('gis_boundaries/1981/ED_1981_EW.shp')
 boundaries = boundaries[boundaries['ED81CD'].str.startswith('03BN')]
 
 # Load indicators
@@ -524,42 +508,16 @@ joined.to_file('outputs/manchester_1981_indicators.gpkg', driver='GPKG')
 ```bash
 source .venv/bin/activate
 
-# Ingest, compute, and join for each decade
-python scripts/01_ingest_1981_eds.py
-python scripts/04_compute_indicators_1981_eds.py
-python scripts/08_join_boundaries_1981_eds.py
-
-python scripts/02_ingest_1991_eds.py
-python scripts/06_compute_indicators_1991_wards.py
-python scripts/09_join_boundaries_1991_wards.py
-
-python scripts/03_ingest_2001_oas.py
-python scripts/07_compute_indicators_2001_oas.py
-python scripts/10_join_boundaries_2001_oas.py
-
-# Harmonise, aggregate, and export
-python scripts/11_harmonise_ward_boundaries.py
-python scripts/12_aggregate_2001_oas_to_wards.py
-python scripts/13_export_web_geojson.py
+python scripts/01_ingest.py
+python scripts/02_compute_indicators_1981.py
+python scripts/03_compute_indicators_1991.py
+python scripts/04_compute_indicators_2001.py
+python scripts/05_join_boundaries.py
+python scripts/06_harmonise_and_export.py
+python scripts/07_analysis.py
 ```
 
 ---
-
-## Development
-
-### Repository Organisation
-
-The `repo-cleanup-2026-02-26` branch consolidates documentation and removes redundant files from earlier development stages:
-
-**Removed files:**
-- Python scripts superseded by later versions
-- Obsolete city-level aggregate CSVs
-- Duplicate documentation fragments
-- Python cache directories
-
-**Consolidated documentation:**
-- Phase 5: `PHASES_5_MASTER.md` (merged from 2 files)
-- Phase 6: Content integrated into `PHASE_6_MASTER.md`
 
 ### Testing
 
@@ -574,10 +532,9 @@ python scripts/validate_join_manual.py
 ### Adding or Extending Data
 
 1. Update `configs/indicators.yml` with new SAS codes if needed
-2. All three decades are already ingested via `01_`–`03_ingest_*.py`
-3. Rerun the relevant `04_`–`07_compute_indicators_*.py` script
-4. Regenerate the harmonised output: `11_harmonise_ward_boundaries.py`
-5. Re-export for the web app: `13_export_web_geojson.py`
+2. Re-ingest if raw data changes: `python scripts/01_ingest.py`
+3. Rerun the relevant compute script (`02_`, `03_`, or `04_compute_indicators_*.py`)
+4. Regenerate harmonised output and web GeoJSON: `python scripts/06_harmonise_and_export.py`
 
 ---
 
@@ -620,5 +577,4 @@ Academic research project. Census data sourced from UK Data Service under End Us
 
 For queries regarding the pipeline or data:
 - Open a GitHub issue in this repository
-- Consult `docs/phase6_indicator_documentation/masterguide.md` for detailed workflow documentation
-- Review `docs/phase6_indicator_documentation/` for troubleshooting guidance
+- Consult `docs/full_technical.md` for full technical reference

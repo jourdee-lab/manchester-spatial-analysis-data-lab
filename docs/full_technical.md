@@ -1,7 +1,7 @@
 # FYP Tools & Methods: Comprehensive Technical Summary
 
 **Project:** Spatial Analysis of Chinese Immigrant Integration in Manchester (1981–2001)  
-**Date:** 31 January 2026  
+**Date:** 7 March 2026  
 **Author:** Final Year Project Student  
 **Repositories:**
 - Data Pipeline: `manchester_spatial_lab/fyp_main`
@@ -49,105 +49,119 @@ This FYP combines **data engineering** (Python/GeoPandas), **geospatial analysis
 `/home/jourdee/Workspace/manchester_spatial_lab/fyp_main`
 
 ### Purpose
-Ingest, process, validate, and aggregate UK Census Small Area Statistics (SAS) data from 1981 for Manchester.
+Ingest, process, validate, and aggregate UK Census Small Area Statistics (SAS) data from 1981, 1991, and 2001 for Manchester. Produce computed indicator tables, spatial GeoPackages, and harmonised cross-decade comparison outputs.
 
 ### Directory Structure
 
 ```
 fyp_main/
-├── .github/instructions/              # Phase specifications & methodology
-│   ├── fyp_phase_5.instructions.md    # QGIS join validation PRD
-│   ├── fyp_phase_6.instructions.md    # Indicator construction PRD
-│   └── Repository clean.instructions.md
+├── README.md                          # Main documentation
 │
 ├── configs/                           # Configuration files (YAML-based)
 │   ├── indicators.yml                 # 29 indicator definitions with formulas
 │   └── sas_raw_file_mapping.yml       # Raw SAS file structure documentation
 │
-├── data/                              # Raw and processed datasets
-│   ├── raw/                           # Raw census SAS CSVs (20 files × 5 parts)
-│   │   └── census_1981/
-│   │       ├── 81sas02ews/            # Demographics
-│   │       ├── 81sas04ews/            # Country of birth
-│   │       ├── 81sas07ews/            # Employment
-│   │       └── 81sas10ews/            # Housing & tenure
+├── data/
+│   ├── raw/                           # Raw census SAS CSVs (.gitignored — obtain from UK Data Service)
+│   │   ├── sas/1981_sas0{2,4,7,10}_part{1-5}.csv   # 1981: 20 CSV parts
+│   │   ├── s{02,06,07,09,16,81}ews/    # 1991: 6 tables × 4 parts
+│   │   └── c01c{s001,t003,s015,s028,s049,s052,s056,s060}_ons.csv  # 2001: 8 tables
 │   │
 │   ├── processed/
-│   │   ├── raw_ed_level/              # ED-level intermediate data
-│   │   │   └── census_1981/
-│   │   │       ├── sas02_1981_ed_level.csv
-│   │   │       ├── sas04_1981_ed_level.csv
-│   │   │       ├── sas07_1981_ed_level.csv
-│   │   │       └── sas10_1981_ed_level.csv
-│   │   │
+│   │   ├── 1991_sas_code_verification.csv          # 1991 SAS code cross-check
+│   │   ├── aggregates/
+│   │   │   ├── census_1981/README.md
+│   │   │   ├── census_1991/1991_sas02_totalpop_combined.csv
+│   │   │   └── census_2001/2001_oas_combined_raw.csv
 │   │   ├── indicators/                # Final indicator outputs
-│   │   │   └── 1981/
-│   │   │       └── manchester_eds_1981_indicators.csv
-│   │   │
-│   │   └── outputs/spatial/           # Spatial products
-│   │       └── 1981/
-│   │           └── manchester_eds_1981_joined_indicators.gpkg
+│   │   │   ├── 1981/
+│   │   │   │   ├── indicators_summary.txt
+│   │   │   │   ├── manchester_eds_1981_indicators.csv        # Ward-level
+│   │   │   │   └── manchester_eds_1981_indicators_ed_level.csv  # ED-level
+│   │   │   ├── 1991/
+│   │   │   │   ├── manchester_district_1991_indicators.csv
+│   │   │   │   ├── manchester_eds_1991_indicators.csv
+│   │   │   │   └── manchester_wards_1991_indicators.csv
+│   │   │   ├── 2001/manchester_oas_2001_indicators.csv
+│   │   │   └── temporal/
+│   │   │       ├── harmonisation_metadata.json
+│   │   │       ├── harmonised_zones.geojson
+│   │   │       ├── manchester_1981_1991_comparison.csv
+│   │   │       ├── manchester_1981_1991_2001_comparison.csv
+│   │   │       ├── manchester_harmonised_indicators_1981_1991_2001.csv
+│   │   │       └── temporal_comparison_metadata.json
+│   │   └── outputs/spatial/           # Spatial products (GeoPackage)
+│   │       ├── 1981/
+│   │       │   ├── manchester_eds_1981_joined_attributes.csv
+│   │       │   └── manchester_eds_1981_joined_indicators.gpkg
+│   │       ├── 1991/
+│   │       │   ├── manchester_eds_1991_joined_indicators.gpkg
+│   │       │   └── manchester_wards_1991_indicators_for_qgis.csv
+│   │       └── 2001/manchester_oas_2001_joined_indicators.gpkg
 │   │
 │   └── lookups/                       # Reference tables
 │       ├── 1981_geography_lookup.csv
 │       ├── 1981_variable_lookup.csv
-│       └── 1981_table_code_name_lookup.csv
+│       ├── 1981_table_code_name_lookup.csv
+│       ├── 1991_census_structure.md
+│       ├── 1991_england_wales_scotland_geography_lookup.csv
+│       ├── 1991_England_Wales_Scotland_Small_Area_Statistics_variable_lookup.csv
+│       ├── 1991_table_code_name_lookup.csv
+│       ├── 2001_geography_lookup_england.csv
+│       ├── 2001_variable_lookup_ew.csv
+│       └── 2001_table_code_and_names_ukcas_map.csv
 │
-├── docs/                              # Documentation & reports
-│   ├── join_validation_summary.md     # Phase 5 join QA report
-│   ├── join_validation_statistics.json
-│   ├── SUPERVISOR_MEETING_SUMMARY_2026-01-22.md
-│   ├── PHASE7_CONDENSED_PRD.md
-│   ├── phase6_indicator_documentation/
-│   │   ├── PHASE_6_IMPLEMENTATION_REPORT.md
-│   │   ├── indicators_1981_metadata.json
-│   │   └── indicators_1981_summary.json
-│   └── archived/                      # Session logs & historical context
+├── docs/
+│   └── full_technical.md                        # Full technical reference (this file)
 │
-├── figures/                           # Map exports & visualizations
-│   └── phase5_test_choropleth_1981_chinese_born.png
+├── figures/
+│   └── choropleth_maps/
+│       ├── 1981/
+│       │   ├── 1981_chinese_born_choropleth.png
+│       │   └── 1981_chinese_born_choropleth.pgw
+│       ├── 1991/
+│       │   ├── 1991_chinese_ethnic_ed_choropleth.png
+│       │   └── 1991_chinese_ethnic_ed_choropleth.pgw
+│       └── 2001/manchester_oas_2001_joined_choropleth_maps.qgz
 │
-├── gis_boundaries/                    # Boundary shapefiles
-│   └── ED_1981_EW.shp{x,.dbf,.prj}   # 1981 Enumeration Districts (GB-wide)
+├── gis_boundaries/                    # Boundary shapefiles (.gitignored)
+│   ├── 1981/                          # ED_1981_EW.shp
+│   ├── 1991/                          # england_wa_1991.shp
+│   └── 2001/
+│       ├── OA/                        # england_oa_2001.shp
+│       └── wards/                     # england_caswa_2001_clipped.shp
 │
-├── qgis/                              # QGIS projects
-│   ├── phase5_join_validation_1981_eds.qgz
-│   ├── phase6_indicator_mapping_1981.qgz
-│   └── main_join_validation_1981_eds.qgz
+├── qgis/
+│   └── 1981/
+│       ├── join_validation.qgz        # Join QA (100% match, 1,017 EDs)
+│       └── indicator_mapping.qgz      # Indicator choropleth template
 │
-├── scripts/                           # Python processing scripts
-│   ├── 01_ingest_1981_eds.py                   # Step 1a: Raw data ingestion (1981 EDs)
-│   ├── 02_ingest_1991_eds.py                   # Step 1b: Raw data ingestion (1991 EDs)
-│   ├── 03_ingest_2001_oas.py                   # Step 1c: Raw data ingestion (2001 OAs)
-│   ├── 04_compute_indicators_1981_eds.py       # Step 2a: Indicators (1981 EDs)
-│   ├── 05_compute_indicators_1991_eds.py       # Step 2b: Indicators (1991 EDs)
-│   ├── 06_compute_indicators_1991_wards.py     # Step 2c: Indicators (1991 wards)
-│   ├── 07_compute_indicators_2001_oas.py       # Step 2d: Indicators (2001 OAs)
-│   ├── 08_join_boundaries_1981_eds.py          # Step 3a: Spatial join (1981)
-│   ├── 09_join_boundaries_1991_wards.py        # Step 3b: Spatial join (1991)
-│   ├── 10_join_boundaries_2001_oas.py          # Step 3c: Spatial join (2001)
-│   ├── 11_harmonise_ward_boundaries.py         # Step 4: Harmonise ward boundaries
-│   ├── 12_aggregate_2001_oas_to_wards.py       # Step 5: Aggregate 2001 OAs → wards
-│   ├── 13_export_web_geojson.py                # Step 6: Export GeoJSON for web app
-│   └── utils_convert_gpkg_to_geojson.py       # Utility: Convert GeoPackage → GeoJSON
+├── scripts/
+│   ├── utils.py
+│   ├── 01_ingest.py
+│   ├── 02_compute_indicators_1981.py
+│   ├── 03_compute_indicators_1991.py
+│   ├── 04_compute_indicators_2001.py
+│   ├── 05_join_boundaries.py
+│   ├── 06_harmonise_and_export.py
+│   └── 07_analysis.py
 │
-├── notebooks/                         # Jupyter notebooks
-│   └── build_pipeline.ipynb
-│
-└── README.md                          # Main documentation
+└── .venv/                             # Python virtual environment (gitignored)
 ```
 
 ### Key Data Characteristics
 
 | Aspect | Details |
 |--------|---------|
-| **Census Year** | 1981 |
-| **Data Granularity** | Ward-level aggregation on ED boundaries (1,053 wards) |
-| **Geographic Coverage** | Manchester Local Authority (LAD code 03BN) |
-| **Boundary Features** | 1,017 Enumeration Districts (EDs) |
-| **SAS Tables Used** | SAS02 (demographics), SAS04 (country of birth), SAS07 (employment), SAS10 (housing) |
+| **Census Years** | 1981, 1991, 2001 |
+| **Data Granularity** | 1981: ED-level (1,017 EDs); 1991: ED + ward level; 2001: OA level |
+| **Geographic Coverage** | Manchester Local Authority (LAD codes 03BN / 00BN) |
+| **Boundary Features** | 1981: 1,017 EDs; 1991: electoral wards; 2001: Output Areas |
+| **SAS/CAS Tables Used** | 1981: SAS02/04/07/10; 1991: S02/S06/S07/S09/S16/S81; 2001: CS001/CT003/CS015/CS028/CS049/CS052/CS056/CS060 |
+| **Indicators Computed** | 29 per year (demographics, ethnicity, tenure, housing quality, employment) |
+| **Harmonised Output** | 33 common ward zones, 1981–1991–2001 temporal comparison |
 | **Spatial Reference System** | EPSG:27700 (British National Grid) |
-| **Record Format** | CSV (row = ED/zone, column = SAS code or computed indicator) |
+| **Record Format** | CSV (row = zone, column = indicator); GeoPackage for spatial products |
 
 ---
 
@@ -183,103 +197,85 @@ manchester-cityscape-explorer-main/
 │   ├── App.css
 │   ├── main.tsx                       # Entry point
 │   ├── index.css
-│   ├── vite-env.d.ts                  # Vite type definitions
+│   ├── vite-env.d.ts
 │   │
-│   ├── components/                    # Feature components
-│   │   ├── MapContainer.tsx           # Mapbox GL wrapper
-│   │   ├── MapControls.tsx            # Zoom, pan, layer controls
-│   │   ├── MapLegend.tsx              # Legend for choropleth
-│   │   ├── FilterPanel.tsx            # Data filtering UI
-│   │   ├── DataSourcePanel.tsx        # Data source selection
-│   │   ├── TimeSlider.tsx             # Year/time selection
-│   │   ├── StatsOverview.tsx          # Summary statistics display
-│   │   ├── DetailPanel.tsx            # ED-level detail view
-│   │   ├── Header.tsx                 # Header navigation
-│   │   └── Navigation.tsx             # Route navigation
+│   ├── components/
+│   │   ├── ChoroplethMapContainer.tsx     # Mapbox GL wrapper + choropleth logic
+│   │   ├── ChoroplethLegend.tsx           # Dynamic legend for choropleth layers
+│   │   ├── Header.tsx                     # Top navigation bar
+│   │   ├── Navigation.tsx                 # Route navigation
+│   │   ├── PageTransition.tsx             # Animated page transitions
+│   │   └── ui/                            # shadcn/ui component library (30+ components)
 │   │
-│   ├── ui/                            # shadcn/ui component library
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── accordion.tsx
-│   │   ├── dialog.tsx
-│   │   ├── dropdown-menu.tsx
-│   │   ├── slider.tsx
-│   │   ├── tabs.tsx
-│   │   ├── tooltip.tsx
-│   │   ├── select.tsx
-│   │   └── [30+ more UI components]
-│   │
-│   ├── pages/                         # Page components
-│   │   ├── Index.tsx                  # Home page with map
-│   │   ├── About.tsx                  # Project info
-│   │   ├── Methodology.tsx            # Methods documentation
-│   │   ├── Findings.tsx               # Analysis results
-│   │   └── NotFound.tsx               # 404 page
+│   ├── pages/
+│   │   ├── CensusExplorer.tsx             # Main interactive map + indicator explorer
+│   │   ├── About.tsx                      # Project info
+│   │   ├── Findings.tsx                   # Analysis results
+│   │   ├── Methodology.tsx                # Methods documentation
+│   │   └── NotFound.tsx                   # 404 page
 │   │
 │   ├── data/
-│   │   └── sampleData.ts              # Placeholder sample data
+│   │   ├── indicators.ts                  # Indicator metadata & display config
+│   │   └── routes.ts                      # App route definitions
 │   │
 │   ├── hooks/
-│   │   ├── use-mobile.tsx             # Responsive hook
-│   │   └── use-toast.ts               # Toast notification hook
+│   │   ├── use-mobile.tsx                 # Responsive breakpoint hook
+│   │   ├── use-toast.ts                   # Toast notification hook
+│   │   └── usePageDirection.ts            # Navigation direction tracking
 │   │
 │   ├── lib/
-│   │   └── utils.ts                   # Utility functions
+│   │   └── utils.ts
 │   │
 │   └── types/
-│       └── data.ts                    # TypeScript interfaces
+│       └── data.ts                        # TypeScript interfaces
 │
 ├── public/
-│   └── robots.txt
+│   ├── robots.txt
+│   └── geojson/                       # Static GeoJSON served to the map
+│       ├── datasets.json                  # Dataset registry
+│       ├── manchester_eds_1981.geojson
+│       ├── manchester_wards_1981.geojson
+│       ├── manchester_eds_1991.geojson
+│       ├── manchester_wards_1991.geojson
+│       ├── manchester_oas_2001.geojson
+│       └── manchester_wards_2001.geojson
 │
-├── index.html                         # HTML entry point
-├── package.json                       # Dependencies & scripts
-├── tsconfig.json                      # TypeScript config
-├── tsconfig.app.json
-├── tsconfig.node.json
-├── vite.config.ts                     # Vite configuration
-├── tailwind.config.ts                 # Tailwind CSS config
-├── postcss.config.js                  # PostCSS config
-├── eslint.config.js                   # ESLint rules
-├── components.json                    # shadcn/ui config
-├── bun.lockb                          # Bun lock file
-└── README.md
+├── docs/CHOROPLETH_STYLING.md         # Choropleth colour scale documentation
+├── index.html
+├── package.json
+├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
+├── vite.config.ts
+├── tailwind.config.ts
+├── postcss.config.js
+├── eslint.config.js
+├── components.json
+├── vercel.json
+└── bun.lockb
 ```
 
 ### Key Components
 
-#### 1. **MapContainer.tsx**
-- Initializes Mapbox GL map instance
-- Handles layer addition/removal
-- Manages map state (zoom, center, bounds)
-- Responds to filter changes
+#### 1. **ChoroplethMapContainer.tsx**
+- Initializes and manages the Mapbox GL map instance
+- Loads GeoJSON layers from `public/geojson/` for 1981/1991/2001
+- Applies choropleth paint expressions driven by selected indicator
+- Handles year/indicator switching via separate React effects
 
-#### 2. **MapLegend.tsx**
-- Displays choropleth color scale
-- Shows value ranges for each class
-- Updates dynamically based on selected indicator
+#### 2. **ChoroplethLegend.tsx**
+- Renders dynamic colour-scale legend
+- Shows quantile/equal-interval class breaks and value ranges
+- Updates reactively when indicator or dataset changes
 
-#### 3. **FilterPanel.tsx**
-- Year/time selection (1981/1991/2001)
-- Indicator dropdown (25+ metrics)
-- Confidence/data quality filters
-- Search by ward/ED name
+#### 3. **CensusExplorer.tsx** _(main page)_
+- Hosts the map and controls panel
+- Manages selected year, selected indicator, and hover state
+- Passes props down to `ChoroplethMapContainer` and `ChoroplethLegend`
 
-#### 4. **TimeSlider.tsx**
-- Year slider control (1981–2001)
-- Decade selection buttons
-- Plays animated transition between years
+#### 4. **Header.tsx / Navigation.tsx**
+- Top navigation + route links (Census Explorer, Findings, Methodology, About)
 
-#### 5. **StatsOverview.tsx**
-- Shows summary statistics:
-  - Mean, median, std dev of selected indicator
-  - % of area with data
-  - Spatial clustering metrics
-
-#### 6. **DetailPanel.tsx**
-- Displays detailed ED information on click
-- Shows all indicator values for selected ED
-- Temporal comparison (1981–2001)
+#### 5. **PageTransition.tsx**
+- Wraps page content with animated entrance/exit transitions
 
 ---
 
@@ -292,7 +288,7 @@ RAW CENSUS DATA (1981)
 │ (20 CSV files, 112,261 GB EDs per file)
 │ Source: UK Data Service / EDINA
 │
-├─→ [01_ingest_1981_eds.py]
+├─→ [01_ingest.py]
 │   • Loads 5-part files per SAS table
 │   • Concatenates on zoneid
 │   • Filters to Manchester (03BN*)
@@ -300,16 +296,16 @@ RAW CENSUS DATA (1981)
 │   └─→ ED-LEVEL SAS DATA (4 CSVs)
 │       (1,053 EDs × SAS codes)
 │
-├─→ [04_compute_indicators_1981_eds.py]
+├─→ [02_compute_indicators_1981.py]
 │   • Reads indicators.yml config
 │   • Computes raw counts (demographics, housing, etc.)
 │   • Derives rates (% calculations)
-│   • Handles null values & division by zero
+│   • Handles null values & division by zero (NaN → null in JSON output)
 │   • Generates metadata & summary stats
 │   └─→ INDICATOR TABLE (CSV)
 │       (1,053 EDs × 29 indicators)
 │
-├─→ [08_join_boundaries_1981_eds.py]
+├─→ [05_join_boundaries.py]
 │   • Loads ED shapefile (1,017 Manchester features)
 │   • Joins with indicator CSV on WD81CD (ward code)
 │   • 100% match rate validation
@@ -331,7 +327,7 @@ RAW CENSUS DATA (1981)
     • Frontend loads via React Query
     • Displays interactive choropleth
     └─→ LIVE INTERACTIVE MAP
-        (http://localhost:8081)
+        (http://localhost:~~~~)
 ```
 
 ### Data Format Conversions
@@ -408,7 +404,7 @@ RAW CENSUS DATA (1981)
 # Step 1: Load 5-part files per SAS table
 dfs = []
 for part in [1, 2, 3, 4, 5]:
-    df = pd.read_csv(f'81sas02ews/SAS02_1981_part{part}.csv')
+    df = pd.read_csv(f'data/raw/sas/1981_sas02_part{part}.csv')
     dfs.append(df)
 
 # Step 2: Concatenate horizontally on 'zoneid'
@@ -646,7 +642,7 @@ For 1981–2001 comparison, address:
 
 ### 3. QGIS Template Project
 
-**File:** `qgis/phase6_indicator_mapping_1981.qgz`
+**File:** `qgis/1981/indicator_mapping.qgz`
 
 **Contents:**
 - Base layer: ED boundaries (pre-filtered to Manchester)
@@ -668,19 +664,15 @@ For 1981–2001 comparison, address:
 
 **Architecture:**
 ```
-React Component
-├─ State: selectedYear, selectedIndicator, selectedED
-├─ MapContainer (Mapbox GL instance)
-│  └─ Layer: ED boundaries (GeoJSON source)
-│     ├─ Fill paint: `['interpolate', ...]` gradient
-│     ├─ Line paint: Border styling
-│     └─ Popup on click: ED details
-│
-├─ MapLegend (gradient color scale)
-├─ FilterPanel (year + indicator selector)
-├─ TimeSlider (year animation)
-├─ DetailPanel (selected ED info)
-└─ StatsOverview (summary stats)
+CensusExplorer (page)
+├─ State: selectedYear, selectedIndicator, hoveredFeature
+├─ ChoroplethMapContainer (Mapbox GL instance)
+│  └─ GeoJSON source: public/geojson/manchester_*_{year}.geojson
+│     ├─ Fill paint: ['interpolate', ...] choropleth expression
+│     ├─ Line paint: boundary styling
+│     └─ Tooltip on hover: zone details
+├─ ChoroplethLegend (colour-scale + class breaks)
+└─ Year / indicator selector controls
 ```
 
 ### 2. Interactive Features
@@ -862,8 +854,9 @@ if len(outliers) > 0:
 ### 1. Code Organization & Standards
 
 **File Naming Convention:**
-- `01_ingest_1981_eds.py` — Step number + verb + geography + year
-- `04_compute_indicators_1981_eds.py` — Step number + verb + subject + geography
+- `01_ingest.py` — Step number + verb (all years in one script)
+- `02_compute_indicators_1981.py` — Step + verb + subject + year
+- `utils.py` — Shared helpers imported by all scripts
 - Sequential `NN_` prefix makes execution order self-evident
 
 **Code Comments:**
@@ -899,16 +892,12 @@ def normalize_id(ed_code):
 - Data dictionary
 - Usage examples
 
-#### **Phase PRDs (.github/instructions/)**
-- Phase objectives & acceptance criteria
-- Detailed step-by-step procedures
-- Non-functional requirements (reproducibility, auditability, performance)
-- Risk mitigation strategies
+#### **Phase PRDs (.github/instructions/)** _(historical — no longer in repo)_
+- Phase objectives & acceptance criteria were used during development
 
 #### **Implementation Reports (docs/)**
-- `join_validation_summary.md` — Join QA results
-- `phase6_indicator_documentation/indicators_1981_metadata.json` — Data dictionary
-- Session summaries — Historical context & decisions
+- `full_technical.md` — Full pipeline and web app technical reference
+- `data/lookups/1991_census_structure.md` — 1991 SAS table structure notes
 
 #### **Inline Comments (scripts)**
 - "Why" explanations (not just "what")
@@ -1012,7 +1001,7 @@ def test_percentage_calculation():
 **Solution:** Aggregate indicators to ward level, then display on ED-level boundaries. Multiple EDs in same ward inherit identical values.
 
 **Trade-off:**
-- ❌ No within-ward variation visible
+- X No within-ward variation visible
 - ✓ Respects confidentiality & follows historical practice
 - ✓ Enables ED-level spatial mapping
 - ✓ Facilitates longitudinal comparison (1981–2001)
@@ -1101,21 +1090,24 @@ def test_percentage_calculation():
 ### Geospatial Products
 
 4. **QGIS Projects**
-   - `phase5_join_validation_1981_eds.qgz`
-   - `phase6_indicator_mapping_1981.qgz`
+   - `qgis/1981/join_validation.qgz`
+   - `qgis/1981/indicator_mapping.qgz`
    - Reusable templates for 1991/2001
 
 5. **Choropleth Maps**
-   - `phase5_test_choropleth_1981_chinese_born.png`
-   - (Additional maps for each indicator)
+   - `figures/choropleth_maps/` — QGIS-exported indicator maps
 
 ### Code & Documentation
 
-6. **Python Scripts** (reproducible, commented)
-   - `01_ingest_1981_eds.py`
-   - `04_compute_indicators_1981_eds.py`
-   - `08_join_boundaries_1981_eds.py`
-   - `validate_join_manual.py`
+6. **Python Scripts** (reproducible, no emojis or verbose comments)
+   - `utils.py`
+   - `01_ingest.py`
+   - `02_compute_indicators_1981.py`
+   - `03_compute_indicators_1991.py`
+   - `04_compute_indicators_2001.py`
+   - `05_join_boundaries.py`
+   - `06_harmonise_and_export.py`
+   - `07_analysis.py`
 
 7. **Configuration Files** (YAML-based)
    - `configs/indicators.yml`
@@ -1144,21 +1136,3 @@ This FYP demonstrates a **complete data engineering pipeline** from raw census C
 - **Data engineering** (Python: ingestion, validation, aggregation)
 - **Geospatial analysis** (QGIS: join validation, mapping)
 - **Web development** (React: interactive visualization)
-- **Rigorous documentation** (Phase PRDs, implementation reports, code comments)
-
-The methodology is **reproducible, scalable to 1991/2001**, and suitable for **peer review** in academic context.
-
-**Key achievements:**
-✓ 100% join match rate (1,017 EDs validated)  
-✓ 29 indicators computed successfully  
-✓ Web app running with live mapping  
-✓ Fully documented, configuration-driven pipeline  
-✓ Error handling & validation at each stage  
-
-**Next phases:** Extend to 1991/2001, statistical modeling, cartographic refinement, web app deployment.
-
----
-
-**Document Generated:** 31 January 2026  
-**Version:** 1.0 Final  
-**For:** Final Year Project Dissertation Submission
