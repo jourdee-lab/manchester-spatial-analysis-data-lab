@@ -1,7 +1,5 @@
 # Manchester Spatial Analysis: Final Year Project
 
-**Last updated:** 28 February 2026
-
 A geospatial data engineering pipeline for analysing the spatial evolution and economic integration of Chinese immigrant communities in Manchester across three census periods (1981, 1991, 2001).
 
 ---
