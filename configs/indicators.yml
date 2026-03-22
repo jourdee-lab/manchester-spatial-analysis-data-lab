@@ -1,5 +1,3 @@
-# Phase 6 Structure 
-# ================================
 # Defines indicators for small-area analysis of Chinese immigrant integration
 # in Manchester (1981, 1991, 2001)
 #
@@ -19,9 +17,9 @@
 
 years:
   1981:
-    # =====================================================
+
     # SAS02: DEMOGRAPHIC BASE (Total Population by Age/Sex)
-    # =====================================================
+
     TOTAL_RES:
       table: sas02
       code: 81sas020050
@@ -47,9 +45,8 @@ years:
       calculation: "100 * 81sas020054 / TOTAL_RES"
       note: "Optional: Sex structure indicator"
 
-    # =====================================================
     # SAS04: COUNTRY OF BIRTH (Chinese / Far East Presence)
-    # =====================================================
+
     CHINESE_BORN:
       table: sas04
       code: 81sas040359
@@ -78,9 +75,8 @@ years:
       calculation: "100 * CHINESE_BORN / TOTAL_RES"
       note: "Key integration indicator: ethnic presence"
 
-    # =====================================================
     # SAS07: EMPLOYMENT (Economic Position - Ages 16+)
-    # =====================================================
+
     ALL_EMPLOYED:
       table: sas07
       code: 81sas070615
@@ -108,9 +104,8 @@ years:
 
     # NOTE: UNEMP_RATE not available in 1981 SAS07 (no unemployment data in this table)
 
-    # =====================================================
     # SAS10: HOUSING & TENURE (Housing Quality, Tenure, Amenities)
-    # =====================================================
+
     TOTAL_HH:
       table: sas10
       code: 81sas100929
@@ -245,16 +240,16 @@ years:
       note: "Optional: Combines PCT_OVERCROWD_GT1P5, PCT_NO_BATH_OR_WC (normalized to 0-1)"
 
   1991:
-    # =====================================================
+
     # 1991 Census Tables (Verified from variable lookup)
-    # =====================================================
+
     # Core tables: S02EWS (demographics), S06EWS (ethnic group), S07EWS (country of birth),
     #              S09EWS (economic position), S16EW (tenure & amenities)
     # Note: 1991 uses 's0XXXXX' format (no year prefix in raw data)
     
-    # =====================================================
+
     # S02EWS: DEMOGRAPHIC BASE (Total Population)
-    # =====================================================
+
     TOTAL_RES:
       table: s02ews
       code: s020001
@@ -274,9 +269,9 @@ years:
       description: "All ages Female Persons"
       type: raw
     
-    # =====================================================
+
     # S06EWS: ETHNIC GROUP (PRIMARY for Chinese identification)
-    # =====================================================
+
     CHINESE_ETHNIC:
       table: s06ews
       code: s060009
@@ -342,9 +337,9 @@ years:
       calculation: "100 * CHINESE_ETHNIC / TOTAL_RES"
       note: "Key integration indicator: ethnic presence (1991 direct measure)"
     
-    # =====================================================
+
     # S07EWS: COUNTRY OF BIRTH (SUPPLEMENTARY for comparison)
-    # =====================================================
+
     CHINA_BORN_MALE:
       table: s07ews
       code: s070041
@@ -371,9 +366,9 @@ years:
       denominator: TOTAL_RES
       calculation: "100 * CHINA_BORN / TOTAL_RES"
     
-    # =====================================================
+
     # S09EWS: ECONOMIC POSITION (Chinese-specific)
-    # =====================================================
+
     CHINESE_16PLUS:
       table: s09ews
       code: s090005
@@ -423,9 +418,9 @@ years:
       description: "Chinese economic activity rate"
       type: rate
     
-    # =====================================================
+
     # S49EW: HOUSEHOLDS BY ETHNIC GROUP (Chinese-specific housing)
-    # =====================================================
+
     CHINESE_HOUSEHOLDS:
       table: s49ew
       code: s490005
@@ -463,9 +458,9 @@ years:
       type: rate
 
   2001:
-    # =====================================================
+
     # 2001 Census Tables (Output Area level)
-    # =====================================================
+
     # Geography unit : Output Area (OA), codes start with '00BN' for Manchester
     # Table prefix   : CS0XX (topic tables) and CT003 (ethnic group)
     # Cell reference : TableCode + 4-digit cell number
@@ -479,9 +474,8 @@ years:
     #   Do NOT use asia_born_pct as a direct Chinese-presence indicator;
     #   it is provided only for longitudinal comparison context.
 
-    # =====================================================
     # CS001EW: TOTAL POPULATION
-    # =====================================================
+
     TOTAL_POP:
       table: cs001ew
       code: CS0010001
@@ -489,9 +483,8 @@ years:
       type: denominator
       note: "Base denominator for all population rates at OA level"
 
-    # =====================================================
     # CT003EW: ETHNIC GROUP (PRIMARY for Chinese identification)
-    # =====================================================
+
     CHINESE_ETHNIC:
       table: ct003ew
       code: CT0030016
@@ -508,10 +501,9 @@ years:
       denominator: TOTAL_POP
       note: "Key integration indicator: ethnic presence (2001 direct measure)"
 
-    # =====================================================
     # CS015EW: COUNTRY OF BIRTH – ASIA PROXY
     # ⚠ PROXY ONLY – not equivalent to China-born
-    # =====================================================
+
     ASIA_BORN:
       table: cs015ew
       code: CS0150049
@@ -537,9 +529,8 @@ years:
         CHINA_BORN only with explicit caveats. For ethnic presence, use
         PCT_CHINESE_ETHNIC (CT003) instead.
 
-    # =====================================================
     # CS028EW: ECONOMIC ACTIVITY (all persons 16-74)
-    # =====================================================
+
     POP_16_74:
       table: cs028ew
       code: CS0280001
@@ -586,9 +577,8 @@ years:
       type: rate
       denominator: POP_16_74
 
-    # =====================================================
     # CS049EW: TENURE
-    # =====================================================
+
     TOTAL_HH_SPACES:
       table: cs049ew
       code: CS0490001
@@ -634,9 +624,8 @@ years:
       type: rate
       denominator: TOTAL_HH_SPACES
 
-    # =====================================================
     # CS052EW: PERSONS PER ROOM (OVERCROWDING)
-    # =====================================================
+
     ALL_HH_052:
       table: cs052ew
       code: CS0520001
@@ -675,9 +664,8 @@ years:
       type: rate
       denominator: ALL_HH_052
 
-    # =====================================================
     # CS056EW: AMENITIES (bath / WC)
-    # =====================================================
+
     ALL_HH_056:
       table: cs056ew
       code: CS0560001
@@ -698,9 +686,8 @@ years:
       type: rate
       denominator: ALL_HH_056
 
-    # =====================================================
     # CS060EW: CAR OWNERSHIP
-    # =====================================================
+
     ALL_HH_060:
       table: cs060ew
       code: CS0600001
@@ -720,10 +707,8 @@ years:
       type: rate
       denominator: ALL_HH_060
 
-
-# =====================================================
 # METADATA & NOTES
-# =====================================================
+
 # 
 # Indicator Categories:
 # - Demographic base: Population size, age/sex structure
