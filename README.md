@@ -1,6 +1,6 @@
 # Manchester Spatial Analysis: Final Year Project
 
-A geospatial data engineering pipeline for analysing the spatial evolution and economic integration of Chinese immigrant communities in Manchester across three census periods (1981, 1991, 2001).
+A geospatial data engineering workflow for analysing the spatial evolution and economic integration of Chinese immigrant communities in Manchester across three census periods (1981, 1991, 2001).
 
 ---
 
@@ -9,17 +9,19 @@ A geospatial data engineering pipeline for analysing the spatial evolution and e
 1. [Overview](#overview)
 2. [Repository Structure](#repository-structure)
 3. [Installation and Reproduction](#installation-and-reproduction)
-4. [Data Pipeline](#data-pipeline)
+4. [Data Workflow](#data-workflow)
 5. [Key Files & Documentation](#key-files--documentation)
 6. [Geography & Codes](#geography--codes)
 7. [Data Dictionary](#data-dictionary)
 8. [Usage Examples](#usage-examples)
-9. [Development](#development)
-10. [References](#references)
+9. [Validation and Testing](#validation-and-testing)
+10. [Bibliography and Sources](#bibliography-and-sources)
 
 ---
 
 ## Overview
+
+This repository contains a longitudinal geospatial analysis workflow for examining the spatial evolution and socioeconomic integration of Chinese-born residents in Manchester across three census periods (1981, 1991, 2001). The workflow implements a reproducible process from raw census Small Area Statistics through to harmonised ward-level indicators and visualisations, enabling systematic comparison of residential distribution patterns and housing and employment outcomes at enumeration district and ward levels.
 
 ### Research Questions
 
@@ -41,25 +43,27 @@ A geospatial data engineering pipeline for analysing the spatial evolution and e
 
 ### Data Sources
 
-- **UK Census Small Area Statistics (SAS)** — sourced via UK Data Service / EDINA
-  - **1981:** SAS02 (demographics), SAS04 (country of birth), SAS07 (employment), SAS10 (housing) — 5-part split CSVs
-  - **1991:** S02 (demographics), S06 (ethnic group), S07 (country of birth), S09 (economic position), S16/S20 (tenure/amenities), S81 (communal establishments) — 4-part split CSVs
-  - **2001:** CS001EW (population), CT003EW (ethnicity), CS015EW (country of birth), CS028EW (economic activity), CS049EW (tenure), CS052EW (overcrowding), CS056EW (amenities), CS060EW (car ownership) — ONS dissemination CSVs
-- **Digital Boundary Shapefiles** — UK Data Service / EDINA
+All raw census data and boundary shapefiles are sourced from the [UK Data Service](https://census.ukdataservice.ac.uk/) and EDINA Census Geography (https://edina.ac.uk/census/).
+
+- **UK Census Small Area Statistics (SAS)** 
+  - **1981:** SAS02 (demographics), SAS04 (country of birth), SAS07 (employment), SAS10 (housing) — 5-part split files
+  - **1991:** S02EWS (demographics), S06EWS (ethnic group), S07EWS (country of birth), S09EWS (economic position), S16EW+S (tenure and amenities), S81EWS (communal establishments) — 4-part split files
+  - **2001:** CS001EW (population), CT003EW (ethnicity), CS015EW (country of birth), CS028EW (economic activity), CS049EW (tenure), CS052EW (overcrowding), CS056EW (amenities), CS060EW (car ownership) — ONS dissemination format
+- **Digital Boundary Shapefiles** 
   - 1981: Enumeration District boundaries (`ED_1981_EW.shp`)
   - 1991: Electoral ward boundaries (`england_wa_1991.shp`)
-  - 2001: Output Area boundaries (`england_oa_2001.shp`) + ward boundaries (`england_caswa_2001_clipped.shp`)
+  - 2001: Output Area boundaries (`england_oa_2001.shp`) and ward boundaries (`england_caswa_2001_clipped.shp`)
 
 ### Technical Specification
 
-The pipeline is configured via YAML files and operates at Enumeration District level across 1,053 Manchester EDs (1981), electoral wards (1991), and Output Areas (2001), harmonised to 33 common ward geographies. It computes 29 indicators spanning ethnicity, housing tenure and quality, employment, and economic position. QGIS is used for spatial join validation and choropleth mapping. All workflow steps are documented with accompanying validation scripts to support independent reproduction.
+The workflow operates at enumeration district (1981), electoral ward (1991), and Output Area (2001) levels across Manchester's 1,053 enumeration districts, harmonised to 33 common ward geographies. Configuration is managed through YAML-based indicator definitions and file mapping specifications. The workflow derives 29 socioeconomic indicators spanning ethnicity and birthplace, housing tenure and quality, employment, and economic activity. Spatial data validation is performed in QGIS, and all intermediate workflow outputs are retained to enable independent verification and reproduction.
 
 ---
 
 ## Repository Structure
 
 ```
-FYP_Data_Pipeline/
+FYP_Data_Workflow/
 │
 ├── configs/
 │   ├── indicators.yml              # 29 indicator definitions (1981/1991/2001)
@@ -151,7 +155,6 @@ FYP_Data_Pipeline/
 │   ├── 05_join_boundaries.py          # Step 3: Spatial join (1981, 1991, 2001)
 │   ├── 06_harmonise_and_export.py     # Step 4: Harmonise ward boundaries + export GeoJSON
 │   ├── 07_analysis.py                 # Step 5: Dissertation analysis (RQ1–RQ5)
-│   └── 14_dissertation_analysis.py   # Extended dissertation analysis
 │
 └── .venv/                          # Python virtual environment (gitignored)
 
@@ -161,24 +164,21 @@ FYP_Data_Pipeline/
 
 ## Installation and Reproduction
 
-### Prerequisites
+### System Requirements
+
+- Python 3.9 or later
+- Required libraries: `pandas`, `pyyaml`, `geopandas`
+
+### Setup Procedure
+
+**1. Clone the repository:**
 
 ```bash
-# Python 3.9+ required
-python3 --version
-
-# Install dependencies
-pip install pandas pyyaml geopandas
+git clone https://github.com/jourdee-lab/FYP_Data_Workflow.git
+cd FYP_Data_Workflow
 ```
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/jourdee-lab/FYP_Data_Pipeline.git
-cd FYP_Data_Pipeline
-```
-
-### 2. Set Up the Environment
+**2. Configure the environment:**
 
 ```bash
 # Create virtual environment
@@ -189,7 +189,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt  # (if available)
 ```
 
-### 3. Run the Pipeline
+**3. Execute the workflow:**
 
 ```bash
 # Step 1: Ingest all three census years
@@ -210,7 +210,7 @@ python scripts/06_harmonise_and_export.py
 python scripts/07_analysis.py
 ```
 
-### 4. Inspect Outputs
+**4. Inspect output:**
 
 ```bash
 # Check indicator output
@@ -222,40 +222,29 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 ---
 
-## Data Pipeline
+## Data Workflow
 
-### Phase 1–4: Data Preparation (Complete)
+The workflow implements a five-stage process to transform raw census data into harmonised, analytically ready socioeconomic indicators at ward level.
 
-- Aggregate city-level SAS tables (SAS02, SAS04, SAS07, SAS10)
-- Create Manchester filter logic (`zoneid.startswith("03BN")`)
-- Define indicator formulas and denominators
+### Stage 1: Data Ingestion
 
-### Phase 5: QGIS Join Validation (Complete)
+Raw SAS tables (1981, 1991) and CAS tables (2001) are extracted from the UK Data Service and concatenated by zone identifier (`zoneid`). Data are filtered to Manchester Local Authority District prefixes (`03BN` for 1981–1991, `00BN` for 2001) to create Manchester-specific census extracts.
 
-- **Goal:** Validate join between ED boundaries and census data
-- **Result:** 100% match rate (1,017 EDs)
-- **Outputs:**
-  - `qgis/1981/join_validation.qgz`
+### Stage 2: Indicator Computation
 
-### Phase 6: Indicator Construction (Complete)
+Twenty-nine socioeconomic indicators are derived from raw SAS/CAS variables according to formula specifications maintained in `configs/indicators.yml`. Indicators span demographics, ethnicity and birthplace, housing tenure and quality, and employment and economic activity. Numerators and denominators are calculated separately to enable rate computation and validation.
 
-- **Goal:** Compute indicators at ED, ward, and OA level across all three census years
-- **Process:**
-  1. Ingest raw SAS CSV files into zone-level data frames
-  2. Compute 29 indicators (demographics, ethnicity, housing, employment)
-  3. Export per-decade indicator tables and an ED-level detail table
-- **Outputs:**
-  - `data/processed/indicators/1981/manchester_eds_1981_indicators.csv`
-  - `data/processed/indicators/1981/manchester_eds_1981_indicators_ed_level.csv`
-  - `data/processed/indicators/1991/manchester_wards_1991_indicators.csv`
-  - `data/processed/indicators/2001/manchester_oas_2001_indicators.csv`
-  - `data/processed/indicators/temporal/` (harmonised cross-decade comparison files)
+### Stage 3: Spatial Join and Validation
 
-### Phase 7: Mapping & Analysis (Complete)
+Computed indicator tables are joined to boundary shapefiles (enumeration district, ward, and Output Area) using zone identifiers. Spatial join validation in QGIS confirms 100% match rates (1,017 enumeration districts in 1981). Outputs are written as GeoPackage files with embedded geometry for archival and analytical use.
 
-- Create QGIS choropleths
-- Statistical analysis (correlation, clustering)
-- Longitudinal comparison (1981 vs 1991 vs 2001)
+### Stage 4: Geographic Harmonisation
+
+Boundary geographies are harmonised to the 2001 ward configuration (33 wards) to enable longitudinal comparison. 1981 enumeration districts are aggregated to ward level using areal interpolation, assuming uniform population distribution within enumeration districts. 1991 ward boundaries are remapped to 2001 codes.
+
+### Stage 5: Export and Publication
+
+Harmonised indicators and geometries are exported as GeoJSON for web publication and as GeoPackage files for archival and QGIS-based cartographic analysis.
 
 ---
 
@@ -279,7 +268,6 @@ cat data/processed/indicators/1981/indicators_summary.txt
 | `05_join_boundaries.py` | Spatial join: 1981 EDs, 1991 wards, 2001 OAs | Active |
 | `06_harmonise_and_export.py` | Harmonise ward boundaries + export web GeoJSON | Active |
 | `07_analysis.py` | Dissertation analysis (RQ1–RQ5) | Active |
-| `14_dissertation_analysis.py` | Extended dissertation analysis | Active |
 | `utils.py` | Shared helpers (safe_rate, weighted_mean, dissimilarity_index) | Active |
 
 ### Documentation (Key)
@@ -290,22 +278,27 @@ cat data/processed/indicators/1981/indicators_summary.txt
 
 ## Geography & Codes
 
-### Manchester LAD Code
+### Manchester LAD Codes
 
-- **1981 Census:** `03BN` (Greater Manchester - Manchester district)
+#### 1981 and 1991: Small Area Statistics
+- **LAD Code:** `03BN` (Greater Manchester - Manchester district)
 - **Geography Type:** Enumeration Districts (EDs)
 - **Total Manchester EDs:** 1,053 (includes aggregate rows with prefix `03BN`)
+- **ED Code Format:** `03BNFA01`, `03BNFA02`, ..., `03BNZZ99`
+- **Structure:** `03BN` (LAD) + `FA` (ward/area) + `01` (ED number)
 
-### ED Code Format
-
-- Example: `03BNFA01`, `03BNFA02`, ..., `03BNZZ99`
-- Structure: `03BN` (LAD) + `FA` (ward/area) + `01` (ED number)
+#### 2001: Census Area Statistics
+- **LAD Code:** `00BN` (Greater Manchester - Manchester district)
+- **Geography Type:** Output Areas (OAs)
+- **OA Code Format:** `00BNFA0001`, `00BNFA0002`, ..., `00BNZZ9999`
+- **Structure:** `00BN` (LAD) + `FA` (ward/area) + `0001` (OA number)
+- **Note:** OA codes are exactly 10 characters; used as the subzone aggregation unit
 
 ---
 
 ## Census Raw Data Inventory
 
-All raw files are stored in `data/raw/` and excluded from version control (`.gitignore`). They must be obtained from the [UK Data Service](https://census.ukdataservice.ac.uk/) before running the pipeline.
+All raw files are stored in `data/raw/` and excluded from version control via `.gitignore`. Raw data must be sourced from the UK Data Service before executing the workflow.
 
 ### 1981 — Small Area Statistics (SAS)
 
@@ -476,52 +469,64 @@ joined = boundaries.merge(indicators, left_on='ED81CD', right_on='zoneid', how='
 joined.to_file('outputs/manchester_1981_indicators.gpkg', driver='GPKG')
 ```
 
-### Reproduce the Full Pipeline
-
-```bash
-source .venv/bin/activate
-
-python scripts/01_ingest.py
-python scripts/02_compute_indicators_1981.py
-python scripts/03_compute_indicators_1991.py
-python scripts/04_compute_indicators_2001.py
-python scripts/05_join_boundaries.py
-python scripts/06_harmonise_and_export.py
-python scripts/07_analysis.py
-```
-
 ---
 
-### Testing
+## Validation and Testing
+
+### Unit and Integration Testing
 
 ```bash
 # Run unit tests (if available)
 pytest tests/
 
-# Validate join
+# Validate spatial join
 python scripts/validate_join_manual.py
 ```
 
-### Adding or Extending Data
+### Data Quality and Validation
 
-1. Update `configs/indicators.yml` with new SAS codes if needed
-2. Re-ingest if raw data changes: `python scripts/01_ingest.py`
+All intermediate outputs are validated at each workflow stage. Spatial join validation is performed in QGIS against the national boundary shapefiles, confirming 100% match rates. Indicator formulas are validated against published summary statistics to ensure computational accuracy.
+
+### Extension and Maintenance
+
+To extend the workflow with additional indicators or update data sources:
+
+1. Update `configs/indicators.yml` with new SAS codes if required
+2. Re-ingest raw data: `python scripts/01_ingest.py`
 3. Rerun the relevant compute script (`02_`, `03_`, or `04_compute_indicators_*.py`)
 4. Regenerate harmonised output and web GeoJSON: `python scripts/06_harmonise_and_export.py`
 
 ---
 
-## References
+## Bibliography and Sources
 
-### Academic Sources
+Alba, R. and Nee, V. (1997) 'Rethinking assimilation theory for a new era of immigration', *International Migration Review*, 31(4), pp. 826–874.
 
-- Benton, G. and Gomez, E.T. (2008). *The Chinese in Britain, 1800–Present: Economy, Transnationalism, Identity*. Basingstoke: Palgrave Macmillan.
-- Massey, D.S. and Denton, N.A. (1988). 'The dimensions of residential segregation', *Social Forces*, 67(2), pp. 281–315.
-- Parker, D. (1998). 'Rethinking British Chinese identities', in T. Skelton and G. Valentine (eds) *Cool Places: Geographies of Youth Cultures*. London: Routledge, pp. 66–82.
-- Peach, C. (1996). 'Does Britain have ghettos?', *Transactions of the Institute of British Geographers*, 21(1), pp. 216–235.
-- Simpson, L. (2004). 'Statistics of racial segregation: measures, evidence and policy', *Urban Studies*, 41(3), pp. 661–681.
+Barabantseva, E. (2015) 'On the making of Manchester's Chinatown', *Manchester Memoirs*, Vol. 152. Manchester: Manchester Literary and Philosophical Society.
 
-### Data & Technical Sources
+Barabantseva, E. (2016) 'Seeing beyond an "ethnic enclave": the time/space of Manchester Chinatown', *Identities: Global Studies in Culture and Power*, 23(1), pp. 99–115.
+
+Benton, G. and Gomez, E.T. (2008) *The Chinese in Britain, 1800–Present: Economy, Transnationalism, Identity*. Basingstoke: Palgrave Macmillan.
+
+Chung, S.S.-Y. (2008) 'The study of Chinatown as an urban artifice and its impact on the Chinese community in London'. Master's thesis, University College London.
+
+Foley, R. and Murphy, R. (2015) 'Visualizing a Spatial Archive: GIS, Digital Humanities, and Relational Space', *Breac: A Digital Journal of Irish Studies*, October 7, 2015.
+
+Kennedy, B. (2016) 'Outside Chinatown: the evolution of Manchester's Chinese Arts Centre as a cultural translator for contemporary Chinese art', *Modern China Studies*, 23(1).
+
+Knowles, A.K. and Hillier, A. (eds.) (2008) *Placing History: How Maps, Spatial Data, and GIS Are Changing Historical Scholarship*. Redlands, CA: ESRI Press.
+
+Massey, D.S. and Denton, N.A. (1988) 'The dimensions of residential segregation', *Social Forces*, 67(2), pp. 281–315.
+
+Parker, D. (1998) 'Chinese people in Britain: histories, futures and identities', in Benton, G. and Pieke, F.N. (eds.) *The Chinese in Europe*. Basingstoke: Macmillan, pp. 67–95.
+
+Wilson, K.L. and Portes, A. (1980) 'Immigrant Enclaves: An Analysis of the Labor Market Experiences of Cubans in Miami', *American Journal of Sociology*, 86(2), pp. 295–319.
+
+Zhang, Q., Metcalf, S.S., Palmer, H.D. and Northridge, M.E. (2022) 'Spatial analysis of Chinese American ethnic enclaves and community health indicators in New York City', *Frontiers in Public Health*, 10, 815169. https://doi.org/10.3389/fpubh.2022.815169.
+
+### Technical and Data Sources
+
+The following external data services and tools support this project:
 
 - **Digital Artifact:** [https://mappingfyp.vercel.app](https://mappingfyp.vercel.app)
 - **UK Data Service Census Archive:** [https://census.ukdataservice.ac.uk/](https://census.ukdataservice.ac.uk/)
@@ -548,6 +553,6 @@ Academic research project. Census data sourced from UK Data Service under End Us
 
 ## Support
 
-For queries regarding the pipeline or data:
+For queries regarding the workflow or data:
 - Open a GitHub issue in this repository
 - Consult `docs/full_technical.md` for full technical reference
